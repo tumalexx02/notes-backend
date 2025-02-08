@@ -2,13 +2,19 @@ package main
 
 import (
 	"fmt"
+	"main/internal/config"
 	"main/internal/storage/postgres"
 )
 
 func main() {
-	fmt.Println("Hello, go!")
+	cfg, err := config.New()
+	if err != nil {
+		panic(err)
+	}
 
-	storage, err := postgres.New()
+	fmt.Printf("%+v\n", cfg)
+
+	storage, err := postgres.New(cfg)
 	if err != nil {
 		panic(err)
 	}

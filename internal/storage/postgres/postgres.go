@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"fmt"
+	"main/internal/config"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -12,12 +13,14 @@ type Storage struct {
 	db *sqlx.DB
 }
 
-func New() (*Storage, error) {
+func New(cfg *config.Config) (*Storage, error) {
 	const op = "storage.postgres.New"
+
+	sourceName := getSourceName(cfg)
 
 	db, err := sqlx.Open(
 		"postgres",
-		"host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable",
+		sourceName,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", op, err)
@@ -47,4 +50,16 @@ func initMigrations(db *sqlx.DB) error {
 	}
 
 	return nil
+}
+
+func getSourceName(cfg *config.Config) string {
+	return fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		cfg.Postgres.Host,
+		cfg.Postgres.Port,
+		cfg.Postgres.User,
+		cfg.Postgres.Password,
+		cfg.Postgres.Name,
+		cfg.Postgres.SSLMode,
+	)
 }
