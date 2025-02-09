@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func InitLogger(cfg *config.Config) *slog.Logger {
+func New(cfg *config.Config) *slog.Logger {
 	var log *slog.Logger
 
 	switch cfg.Env {

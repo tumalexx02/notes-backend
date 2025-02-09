@@ -8,3 +8,7 @@ postgres:
   name: postgres
   database: notes
   ssl_mode: disable
+http_server:
+  address: localhost:8085
+  timeout: 5s
+  idle_timeout: 10s

@@ -6,19 +6,23 @@ import (
 	"main/internal/logger"
 	"os"
 
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 func main() {
 	cfg := config.MustLoad()
 
-	log := logger.InitLogger(cfg)
+	log := logger.New(cfg)
 
 	myApp, err := app.New(cfg, log)
 	if err != nil {
-		log.Error("failed to create app", slog.Attr{"error", slog.StringValue(err.Error())})
+		log.Error("failed to create app", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 		os.Exit(1)
 	}
 
-	_ = myApp
+	err = myApp.Start()
+	if err != nil {
+		log.Error("failed to start app", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+		os.Exit(1)
+	}
 }

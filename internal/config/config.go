@@ -2,6 +2,7 @@ package config
 
 import (
 	"log"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
@@ -11,6 +12,7 @@ type Config struct {
 	Env            string `mapstructure:"env"`
 	MigrationsPath string `mapstructure:"migrations_path"`
 	Postgres       `mapstructure:"postgres"`
+	HTTPServer     `mapstructure:"http_server"`
 }
 
 type Postgres struct {
@@ -21,6 +23,12 @@ type Postgres struct {
 	Name     string `mapstructure:"name"`
 	Database string `mapstructure:"database"`
 	SSLMode  string `mapstructure:"ssl_mode"`
+}
+
+type HTTPServer struct {
+	Address     string        `mapstructure:"address"`
+	Timeout     time.Duration `mapstructure:"timeout"`
+	IdleTimeout time.Duration `mapstructure:"idle_timeout"`
 }
 
 func MustLoad() *Config {
