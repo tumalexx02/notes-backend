@@ -2,6 +2,8 @@ package config
 
 import (
 	"log"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -32,22 +34,29 @@ type HTTPServer struct {
 }
 
 func MustLoad() *Config {
+	var cfgPath string
+
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("cannot load .env")
+		cfgPath = os.Getenv("CONFIG_PATH")
+
+		if cfgPath == "" {
+			log.Fatal("cannot load config")
+			os.Exit(1)
+		}
+	} else {
+		viper.AutomaticEnv()
+
+		cfgPath = viper.GetString("CONFIG_PATH")
 	}
 
-	viper.AutomaticEnv()
+	cfgPath = strings.Trim(cfgPath, "\"")
 
-	cfgPath := viper.GetString("CONFIG_DIR")
-	cfgName := viper.GetString("CONFIG_NAME")
-
-	viper.SetConfigName(cfgName)
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(cfgPath)
+	viper.SetConfigFile(cfgPath)
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatal("cannot read config")
+		log.Fatal("cannot read config", err)
+		os.Exit(1)
 	}
 
 	var cfg *Config

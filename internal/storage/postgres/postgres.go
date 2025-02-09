@@ -26,7 +26,7 @@ func New(cfg *config.Config) (*Storage, error) {
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
 
-	err = initMigrations(db)
+	err = initMigrations(db, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -36,7 +36,7 @@ func New(cfg *config.Config) (*Storage, error) {
 	}, nil
 }
 
-func initMigrations(db *sqlx.DB) error {
+func initMigrations(db *sqlx.DB, cfg *config.Config) error {
 	const op = "storage.postgres.initMigrations"
 
 	err := goose.SetDialect("postgres")
@@ -44,7 +44,7 @@ func initMigrations(db *sqlx.DB) error {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	err = goose.Up(db.DB, "./migrations")
+	err = goose.Up(db.DB, cfg.MigrationsPath)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

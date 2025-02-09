@@ -1,12 +1,11 @@
 package main
 
 import (
+	"log/slog"
 	"main/internal/app"
 	"main/internal/config"
 	"main/internal/logger"
 	"os"
-
-	"log/slog"
 )
 
 func main() {

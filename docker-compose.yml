@@ -1,9 +1,31 @@
 services:
   app:
-    container_name: server
+    container_name: notes-server
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
-    restart: unless-stopped
+      - "8181:8181"
+    environment:
+      - CONFIG_PATH="/app/configs/docker.yaml"
+    volumes:
+      - ./configs:/app/configs
+      - ./migrations:/app/migrations
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:15
+    container_name: notes-postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "notes"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 2s
+      timeout: 2s
+      retries: 10
