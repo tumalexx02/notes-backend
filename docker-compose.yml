@@ -7,9 +7,9 @@ services:
     ports:
       - "8181:8181"
     environment:
-      - CONFIG_PATH="/app/configs/docker.yaml"
+      - CONFIG_PATH="/app/config/docker.yaml"
     volumes:
-      - ./configs:/app/configs
+      - ./config:/app/config
       - ./migrations:/app/migrations
     depends_on:
       db:
