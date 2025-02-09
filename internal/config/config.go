@@ -23,10 +23,10 @@ type Postgres struct {
 	SSLMode  string `mapstructure:"ssl_mode"`
 }
 
-func New() (*Config, error) {
+func MustLoad() *Config {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatal("cannot load .env")
 	}
 
 	viper.AutomaticEnv()
@@ -39,13 +39,13 @@ func New() (*Config, error) {
 	viper.AddConfigPath(cfgPath)
 
 	if err := viper.ReadInConfig(); err != nil {
-		return nil, err
+		log.Fatal("cannot read config")
 	}
 
 	var cfg *Config
 	if err := viper.Unmarshal(&cfg); err != nil {
-		return nil, err
+		log.Fatal("cannot unmarshal config")
 	}
 
-	return cfg, nil
+	return cfg
 }

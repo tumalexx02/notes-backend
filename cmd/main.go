@@ -1,23 +1,24 @@
 package main
 
 import (
-	"fmt"
+	"main/internal/app"
 	"main/internal/config"
-	"main/internal/storage/postgres"
+	"main/internal/logger"
+	"os"
+
+	"golang.org/x/exp/slog"
 )
 
 func main() {
-	cfg, err := config.New()
+	cfg := config.MustLoad()
+
+	log := logger.InitLogger(cfg)
+
+	myApp, err := app.New(cfg, log)
 	if err != nil {
-		panic(err)
+		log.Error("failed to create app", slog.Attr{"error", slog.StringValue(err.Error())})
+		os.Exit(1)
 	}
 
-	fmt.Printf("%+v\n", cfg)
-
-	storage, err := postgres.New(cfg)
-	if err != nil {
-		panic(err)
-	}
-
-	_ = storage
+	_ = myApp
 }
