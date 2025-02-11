@@ -20,7 +20,13 @@ const (
 	`
 	getNotesByUserIdQuery = `
 		SELECT * FROM notes
-		WHERE user_id = $1;
+		WHERE user_id = $1
+		ORDER BY updated_at DESC;
+	`
+	getNoteNodesQuery = `
+		SELECT * FROM note_nodes
+		WHERE note_id = $1
+		ORDER BY "order";
 	`
 	updateNoteTitleQuery = `
 		UPDATE notes
@@ -61,12 +67,15 @@ func (s *Storage) CreateNote(noteTitle string, userId string) (int, error) {
 	return id, nil
 }
 
-func (s *Storage) GetNotesByUserId(userId string) ([]note.Note, error) {
+func (s *Storage) GetUserNotes(userId string) ([]note.NotePreview, error) {
 	const op = "storage.postgres.GetNotesByUserId"
 
-	var notes []note.Note
+	var notes []note.NotePreview
 
 	err := s.db.Select(&notes, getNotesByUserIdQuery, userId)
+	if errors.Is(err, sql.ErrNoRows) {
+		return []note.NotePreview{}, storage.ErrNoteNotFound
+	}
 	if err != nil {
 		return notes, fmt.Errorf("%s: %w", op, err)
 	}
@@ -77,17 +86,29 @@ func (s *Storage) GetNotesByUserId(userId string) ([]note.Note, error) {
 func (s *Storage) GetNoteById(id int) (note.Note, error) {
 	const op = "storage.postgres.GetNote"
 
-	var note note.Note
+	var noteFromDB note.Note
 
-	err := s.db.Get(&note, getNoteQuery, id)
+	err := s.db.Get(&noteFromDB, getNoteQuery, id)
 	if errors.Is(err, sql.ErrNoRows) {
-		return note, storage.ErrNoteNotFound
+		return noteFromDB, storage.ErrNoteNotFound
 	}
 	if err != nil {
-		return note, fmt.Errorf("%s: %w", op, err)
+		return noteFromDB, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return note, nil
+	var noteNodes []note.NoteNode
+
+	err = s.db.Select(&noteNodes, getNoteNodesQuery, noteFromDB.Id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return noteFromDB, storage.ErrNoteNotFound
+	}
+	if err != nil {
+		return noteFromDB, fmt.Errorf("%s: %w", op, err)
+	}
+
+	noteFromDB.Nodes = noteNodes
+
+	return noteFromDB, nil
 }
 
 func (s *Storage) UpdateFullNote(note note.Note) error {
@@ -95,7 +116,7 @@ func (s *Storage) UpdateFullNote(note note.Note) error {
 
 	tx := s.db.MustBegin()
 
-	_, err := tx.Exec(updateNoteTitleQuery, note.ID, note.Title)
+	_, err := tx.Exec(updateNoteTitleQuery, note.Id, note.Title)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("%s: %w", op, err)

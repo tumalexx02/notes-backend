@@ -9,6 +9,8 @@ import (
 	"main/internal/http-server/handler/node/add"
 	"main/internal/http-server/handler/node/delete"
 	"main/internal/http-server/handler/note/create"
+	getnote "main/internal/http-server/handler/note/get-note"
+	getusernotes "main/internal/http-server/handler/note/get-user-notes"
 	loggerMiddleware "main/internal/http-server/middleware/logger"
 
 	"github.com/go-chi/chi"
@@ -22,7 +24,10 @@ type Router struct {
 
 type Storage interface {
 	create.NoteCreator
-	add.NoteAdder
+	getnote.NoteGetter
+	getusernotes.NotesGetter
+
+	add.NodeAdder
 	delete.NodeDeleter
 }
 
@@ -49,6 +54,9 @@ func (r *Router) InitRoutes(storage Storage, logger *slog.Logger, cfg *config.Co
 	})
 
 	r.Post("/note", create.New(logger, storage))
+	r.Get("/note/{id}", getnote.New(logger, storage))
+	r.Get("/note/user/{id}", getusernotes.New(logger, storage))
+
 	r.Post("/node", add.New(logger, storage))
 	r.Delete("/node", delete.New(logger, storage))
 }

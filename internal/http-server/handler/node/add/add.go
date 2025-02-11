@@ -22,11 +22,11 @@ type Response struct {
 	Id int `json:"node_id"`
 }
 
-type NoteAdder interface {
+type NodeAdder interface {
 	AddNoteNode(noteId int, contentType string, content string) (int, error)
 }
 
-func New(log *slog.Logger, noteAdder NoteAdder) http.HandlerFunc {
+func New(log *slog.Logger, noteAdder NodeAdder) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.node.add.New"
 
