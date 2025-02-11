@@ -111,6 +111,8 @@ func (s *Storage) GetNoteById(id int) (note.Note, error) {
 	return noteFromDB, nil
 }
 
+// TODO: update title method
+
 func (s *Storage) UpdateFullNote(note note.Note) error {
 	const op = "storage.postgres.UpdateNote"
 
@@ -147,6 +149,8 @@ func (s *Storage) ArchiveNote(id int) error {
 
 	return nil
 }
+
+// TODO: add unarchive method
 
 func (s *Storage) DeleteNote(id int) error {
 	const op = "storage.postgres.DeleteNote"
