@@ -5,6 +5,9 @@ import (
 	"main/internal/config"
 	"net/http"
 
+	resp "main/internal/http-server/api/response"
+	"main/internal/http-server/handler/node/add"
+	"main/internal/http-server/handler/node/delete"
 	"main/internal/http-server/handler/note/create"
 	loggerMiddleware "main/internal/http-server/middleware/logger"
 
@@ -19,6 +22,8 @@ type Router struct {
 
 type Storage interface {
 	create.NoteCreator
+	add.NoteAdder
+	delete.NodeDeleter
 }
 
 func New(cfg *config.Config, log *slog.Logger) *Router {
@@ -40,9 +45,10 @@ func New(cfg *config.Config, log *slog.Logger) *Router {
 
 func (r *Router) InitRoutes(storage Storage, logger *slog.Logger, cfg *config.Config) {
 	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		render.JSON(w, r, map[string]string{"status": "ok", "message": "pong"})
+		render.JSON(w, r, resp.OK())
 	})
 
 	r.Post("/note", create.New(logger, storage))
+	r.Post("/node", add.New(logger, storage))
+	r.Delete("/node", delete.New(logger, storage))
 }

@@ -1,8 +1,10 @@
-package create
+package delete
 
 import (
+	"errors"
 	"log/slog"
 	resp "main/internal/http-server/api/response"
+	"main/internal/storage"
 	"net/http"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -11,22 +13,16 @@ import (
 )
 
 type Request struct {
-	Title  string `json:"title" validate:"required,max=31"`
-	UserId string `json:"user_id" validate:"required"`
+	Id int `json:"id" validate:"required"`
 }
 
-type Response struct {
-	resp.Response
-	Id int `json:"note_id"`
+type NodeDeleter interface {
+	DeleteNoteNode(id int) error
 }
 
-type NoteCreator interface {
-	CreateNote(noteTitle string, userId string) (int, error)
-}
-
-func New(log *slog.Logger, noteCreator NoteCreator) http.HandlerFunc {
+func New(log *slog.Logger, nodeDeleter NodeDeleter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handler.note.create.New"
+		const op = "handler.node.delete.New"
 
 		log = log.With(
 			slog.String("op", op),
@@ -53,24 +49,26 @@ func New(log *slog.Logger, noteCreator NoteCreator) http.HandlerFunc {
 			return
 		}
 
-		title := req.Title
-		userId := req.UserId
+		err := nodeDeleter.DeleteNoteNode(req.Id)
+		if errors.Is(err, storage.ErrNoteNodeNotFound) {
+			log.Error("not found note node", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-		id, err := noteCreator.CreateNote(title, userId)
+			render.JSON(w, r, resp.Error(err.Error()))
+			w.WriteHeader(http.StatusNotFound)
+
+			return
+		}
 		if err != nil {
-			log.Error("failed to create note", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to delete note node", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to create note"))
+			render.JSON(w, r, resp.Error("failed to delete note node"))
 			w.WriteHeader(http.StatusInternalServerError)
 
 			return
 		}
 
-		log.Info("note created", slog.Int("note_id", int(id)))
+		log.Info("note node deleted")
 
-		render.JSON(w, r, Response{
-			Response: resp.OK(),
-			Id:       id,
-		})
+		render.JSON(w, r, resp.OK())
 	}
 }

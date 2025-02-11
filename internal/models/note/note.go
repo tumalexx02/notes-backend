@@ -6,14 +6,14 @@ import (
 
 type ContentType string
 
-var (
-	ContentTypeText  ContentType = "text"
-	ContentTypeImage ContentType = "image"
-	ContentTypeList  ContentType = "list"
+const (
+	ContentTypeText  = "text"
+	ContentTypeImage = "image"
+	ContentTypeList  = "list"
 )
 
 type Note struct {
-	ID         uint       `json:"id"`
+	ID         int        `json:"id"`
 	UserId     string     `json:"user_id"`
 	Title      string     `json:"title"`
 	Nodes      []NoteNode `json:"nodes"`
@@ -23,9 +23,9 @@ type Note struct {
 }
 
 type NoteNode struct {
-	Id          uint        `json:"id"`
-	NoteId      uint        `json:"note_id"`
-	Order       uint        `json:"order"`
+	Id          int         `json:"id"`
+	NoteId      int         `json:"note_id"`
+	Order       int         `json:"order"`
 	ContentType ContentType `json:"type"`
 	Content     string      `json:"content"`
 }

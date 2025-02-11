@@ -1,8 +1,11 @@
 package postgres
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"main/internal/models/note"
+	"main/internal/storage"
 )
 
 const (
@@ -10,15 +13,6 @@ const (
 		INSERT INTO notes (title, user_id) 
 		VALUES ($1, $2)
 		RETURNING id;
-	`
-	createBlankNoteNodeQuery = `
-		INSERT INTO note_nodes (note_id, "order", content_type, content) 
-		VALUES ($1, $2, $3, $4)
-		RETURNING id;
-	`
-	getNodesCountByIdQuery = `
-		SELECT COUNT(*) FROM note_nodes
-		WHERE note_id = $1;
 	`
 	getNoteQuery = `
 		SELECT * FROM notes
@@ -49,43 +43,17 @@ const (
 	`
 )
 
-func (s *Storage) CreateNote(noteTitle string, userId string) (uint, error) {
+func (s *Storage) CreateNote(noteTitle string, userId string) (int, error) {
 	const op = "storage.postgres.CreateNote"
 
-	var id uint
+	var id int
 
 	err := s.db.QueryRow(createNoteQuery, noteTitle, userId).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	blankTextNode := note.NoteNode{
-		NoteId:      id,
-		Order:       0,
-		ContentType: note.ContentTypeText,
-		Content:     "",
-	}
-
-	_, err = s.AddNoteNode(blankTextNode)
-	if err != nil {
-		return 0, fmt.Errorf("%s: %w", op, err)
-	}
-
-	return id, nil
-}
-
-func (s *Storage) AddNoteNode(newNoteNode note.NoteNode) (uint, error) {
-	const op = "storage.postgres.CreateNoteNode"
-
-	var nodesCount uint
-	err := s.db.Get(&nodesCount, getNodesCountByIdQuery, newNoteNode.NoteId)
-	if err != nil {
-		return 0, fmt.Errorf("%s: %w", op, err)
-	}
-
-	var id uint
-
-	err = s.db.Get(&id, createBlankNoteNodeQuery, newNoteNode.NoteId, nodesCount, newNoteNode.ContentType, newNoteNode.Content)
+	_, err = s.AddNoteNode(id, note.ContentTypeText, "")
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
@@ -106,12 +74,15 @@ func (s *Storage) GetNotesByUserId(userId string) ([]note.Note, error) {
 	return notes, nil
 }
 
-func (s *Storage) GetNoteById(id uint) (note.Note, error) {
+func (s *Storage) GetNoteById(id int) (note.Note, error) {
 	const op = "storage.postgres.GetNote"
 
 	var note note.Note
 
 	err := s.db.Get(&note, getNoteQuery, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return note, storage.ErrNoteNotFound
+	}
 	if err != nil {
 		return note, fmt.Errorf("%s: %w", op, err)
 	}
@@ -145,7 +116,7 @@ func (s *Storage) UpdateFullNote(note note.Note) error {
 	return nil
 }
 
-func (s *Storage) ArchiveNote(id uint) error {
+func (s *Storage) ArchiveNote(id int) error {
 	const op = "storage.postgres.ArchiveNote"
 
 	_, err := s.db.Exec(archiveNoteQuery, id)
@@ -156,12 +127,21 @@ func (s *Storage) ArchiveNote(id uint) error {
 	return nil
 }
 
-func (s *Storage) DeleteNote(id uint) error {
+func (s *Storage) DeleteNote(id int) error {
 	const op = "storage.postgres.DeleteNote"
 
-	_, err := s.db.Exec(deleteNoteQuery, id)
+	res, err := s.db.Exec(deleteNoteQuery, id)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if rowsAffected == 0 {
+		return storage.ErrNoteNotFound
 	}
 
 	return nil
