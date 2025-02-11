@@ -36,18 +36,12 @@ type HTTPServer struct {
 func MustLoad() *Config {
 	var cfgPath string
 
-	err := godotenv.Load()
-	if err != nil {
-		cfgPath = os.Getenv("CONFIG_PATH")
+	_ = godotenv.Load()
+	cfgPath = os.Getenv("CONFIG_PATH")
 
-		if cfgPath == "" {
-			log.Fatal("cannot load config")
-			os.Exit(1)
-		}
-	} else {
-		viper.AutomaticEnv()
-
-		cfgPath = viper.GetString("CONFIG_PATH")
+	if cfgPath == "" {
+		log.Fatal("cannot load config")
+		os.Exit(1)
 	}
 
 	cfgPath = strings.Trim(cfgPath, "\"")

@@ -1,4 +1,4 @@
-package notes
+package note
 
 import (
 	"time"
@@ -14,6 +14,7 @@ var (
 
 type Note struct {
 	ID         uint       `json:"id"`
+	UserId     string     `json:"user_id"`
 	Title      string     `json:"title"`
 	Nodes      []NoteNode `json:"nodes"`
 	CreatedAt  time.Time  `json:"created_at"`
@@ -23,6 +24,7 @@ type Note struct {
 
 type NoteNode struct {
 	Id          uint        `json:"id"`
+	NoteId      uint        `json:"note_id"`
 	Order       uint        `json:"order"`
 	ContentType ContentType `json:"type"`
 	Content     string      `json:"content"`
