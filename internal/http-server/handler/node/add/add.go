@@ -41,7 +41,6 @@ func New(log *slog.Logger, noteAdder NodeAdder) http.HandlerFunc {
 			log.Error("failed to decode request body", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			render.JSON(w, r, resp.Error("failed to decode request body"))
-			w.WriteHeader(http.StatusBadRequest)
 
 			return
 		}
@@ -56,7 +55,6 @@ func New(log *slog.Logger, noteAdder NodeAdder) http.HandlerFunc {
 			log.Error("invalid request body", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			render.JSON(w, r, resp.Error("invalid request body"))
-			w.WriteHeader(http.StatusBadRequest)
 
 			return
 		}
@@ -70,7 +68,6 @@ func New(log *slog.Logger, noteAdder NodeAdder) http.HandlerFunc {
 			log.Error("failed to add note node", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			render.JSON(w, r, resp.Error("failed to add note node"))
-			w.WriteHeader(http.StatusInternalServerError)
 
 			return
 		}

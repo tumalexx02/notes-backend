@@ -35,17 +35,31 @@ const (
 	updateNoteNodeContentQuery = `
 		UPDATE note_nodes
 		SET content = $2
-		WHERE id = $1;
+		WHERE id = $1
+		RETURNING note_id;
 	`
 )
 
 func (s *Storage) AddNoteNode(noteId int, contentType string, content string) (int, error) {
 	const op = "storage.postgres.CreateNoteNode"
 
+	tx := s.db.MustBegin()
+
 	var id int
 
-	err := s.db.Get(&id, createBlankNoteNodeQuery, noteId, contentType, content)
+	err := tx.Get(&id, createBlankNoteNodeQuery, noteId, contentType, content)
 	if err != nil {
+		_ = tx.Rollback()
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	_, err = tx.Exec(setUpdatedAtQuery, noteId)
+	if err != nil {
+		_ = tx.Rollback()
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	if err := tx.Commit(); err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -87,6 +101,12 @@ func (s *Storage) DeleteNoteNode(id int) error {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
+	_, err = tx.Exec(setUpdatedAtQuery, noteId)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -97,10 +117,28 @@ func (s *Storage) DeleteNoteNode(id int) error {
 func (s *Storage) UpdateNoteNodeContent(id int, content string) error {
 	const op = "storage.postgres.UpdateNoteNodeContent"
 
-	_, err := s.db.Exec(updateNoteNodeContentQuery, id, content)
+	tx := s.db.MustBegin()
+
+	var noteId int
+
+	err := tx.Get(&noteId, updateNoteNodeContentQuery, id, content)
 	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	_, err = tx.Exec(setUpdatedAtQuery, noteId)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	return nil
 }
+
+// TODO: update order method
+// old_order -> new_order

@@ -43,8 +43,18 @@ const (
 		SET archived_at = NOW()
 		WHERE id = $1;
 	`
+	unarchiveNoteQuery = `
+		UPDATE notes
+		SET archived_at = NULL
+		WHERE id = $1;
+	`
 	deleteNoteQuery = `
 		DELETE FROM notes
+		WHERE id = $1;
+	`
+	setUpdatedAtQuery = `
+		UPDATE notes
+		SET updated_at = NOW()
 		WHERE id = $1;
 	`
 )
@@ -67,6 +77,9 @@ func (s *Storage) CreateNote(noteTitle string, userId string) (int, error) {
 	return id, nil
 }
 
+// GetUserNotes gets all notes for a given user ID from the database. If the user doesn't have any notes,
+// it returns an empty slice and ErrNoteNotFound. If the operation fails, it returns an error.
+
 func (s *Storage) GetUserNotes(userId string) ([]note.NotePreview, error) {
 	const op = "storage.postgres.GetNotesByUserId"
 
@@ -74,7 +87,7 @@ func (s *Storage) GetUserNotes(userId string) ([]note.NotePreview, error) {
 
 	err := s.db.Select(&notes, getNotesByUserIdQuery, userId)
 	if errors.Is(err, sql.ErrNoRows) {
-		return []note.NotePreview{}, storage.ErrNoteNotFound
+		return []note.NotePreview{}, nil
 	}
 	if err != nil {
 		return notes, fmt.Errorf("%s: %w", op, err)
@@ -82,6 +95,9 @@ func (s *Storage) GetUserNotes(userId string) ([]note.NotePreview, error) {
 
 	return notes, nil
 }
+
+// GetNoteById gets a note with the given ID from the database. If the note with the given ID
+// doesn't exist, it returns ErrNoteNotFound. If the operation fails, it returns an error.
 
 func (s *Storage) GetNoteById(id int) (note.Note, error) {
 	const op = "storage.postgres.GetNote"
@@ -111,9 +127,34 @@ func (s *Storage) GetNoteById(id int) (note.Note, error) {
 	return noteFromDB, nil
 }
 
-// TODO: update title method
+// UpdateNoteTitle updates the title of a note with the given ID in the database.
+// If the update operation fails, it returns an error.
 
-func (s *Storage) UpdateFullNote(note note.Note) error {
+func (s *Storage) UpdateNoteTitle(id int, title string) error {
+	const op = "storage.postgres.UpdateNoteTitle"
+
+	res, err := s.db.Exec(updateNoteTitleQuery, id, title)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if rows == 0 {
+		return storage.ErrNoteNotFound
+	}
+
+	return nil
+}
+
+// UpdateFullNote updates a note with a given ID to the given Note object.
+// It is atomic, meaning that either all of the updates are committed or none of them are.
+// If any part of the update fails, the entire transaction is rolled back and
+// an error is returned.
+
+func (s *Storage) UpdateFullNote(id int, note note.Note) error {
 	const op = "storage.postgres.UpdateNote"
 
 	tx := s.db.MustBegin()
@@ -139,6 +180,9 @@ func (s *Storage) UpdateFullNote(note note.Note) error {
 	return nil
 }
 
+// ArchiveNote sets the archived_at field of a note to the current time for the given
+// note ID, effectively archiving the note. Returns an error if the operation fails.
+
 func (s *Storage) ArchiveNote(id int) error {
 	const op = "storage.postgres.ArchiveNote"
 
@@ -150,7 +194,22 @@ func (s *Storage) ArchiveNote(id int) error {
 	return nil
 }
 
-// TODO: add unarchive method
+// UnarchiveNote sets the archived_at field of a note to NULL for the given note ID,
+// effectively unarchiving the note. Returns an error if the operation fails.
+
+func (s *Storage) UnarchiveNote(id int) error {
+	const op = "storage.postgres.ArchiveNote"
+
+	_, err := s.db.Exec(archiveNoteQuery, id)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+// DeleteNote deletes the note with the given ID from the database. If the note
+// doesn't exist, it returns ErrNoteNotFound.
 
 func (s *Storage) DeleteNote(id int) error {
 	const op = "storage.postgres.DeleteNote"

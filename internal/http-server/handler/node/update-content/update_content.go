@@ -34,7 +34,6 @@ func New(log *slog.Logger, nodeUpdater NodeUpdater) http.HandlerFunc {
 			log.Error("failed to decode request body", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			render.JSON(w, r, resp.Error("failed to decode request body"))
-			w.WriteHeader(http.StatusBadRequest)
 
 			return
 		}
@@ -45,7 +44,6 @@ func New(log *slog.Logger, nodeUpdater NodeUpdater) http.HandlerFunc {
 			log.Error("invalid 'id' param", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			render.JSON(w, r, resp.Error("invalid 'id' param"))
-			w.WriteHeader(http.StatusBadRequest)
 
 			return
 		}
@@ -54,7 +52,6 @@ func New(log *slog.Logger, nodeUpdater NodeUpdater) http.HandlerFunc {
 			log.Error("failed to update note node content", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			render.JSON(w, r, resp.Error("failed to update note node content"))
-			w.WriteHeader(http.StatusInternalServerError)
 
 			return
 		}

@@ -38,7 +38,6 @@ func New(log *slog.Logger, noteGetter NoteGetter) http.HandlerFunc {
 			log.Error("invalid 'id' param", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			render.JSON(w, r, resp.Error("invalid 'id' param"))
-			w.WriteHeader(http.StatusBadRequest)
 
 			return
 		}
@@ -48,7 +47,6 @@ func New(log *slog.Logger, noteGetter NoteGetter) http.HandlerFunc {
 			log.Error("note not found", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			render.JSON(w, r, resp.Error(err.Error()))
-			w.WriteHeader(http.StatusNotFound)
 
 			return
 		}
@@ -56,7 +54,6 @@ func New(log *slog.Logger, noteGetter NoteGetter) http.HandlerFunc {
 			log.Error("failed to get note", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			render.JSON(w, r, resp.Error("failed to get note"))
-			w.WriteHeader(http.StatusInternalServerError)
 
 			return
 		}

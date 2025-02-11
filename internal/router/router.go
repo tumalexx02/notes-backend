@@ -12,6 +12,7 @@ import (
 	"main/internal/http-server/handler/note/create"
 	getnote "main/internal/http-server/handler/note/get-note"
 	getusernotes "main/internal/http-server/handler/note/get-user-notes"
+	updatetitle "main/internal/http-server/handler/note/update-title"
 	loggerMiddleware "main/internal/http-server/middleware/logger"
 
 	"github.com/go-chi/chi"
@@ -27,6 +28,7 @@ type Storage interface {
 	create.NoteCreator
 	getnote.NoteGetter
 	getusernotes.NotesGetter
+	updatetitle.NoteTitleUpdater
 
 	add.NodeAdder
 	delete.NodeDeleter
@@ -58,9 +60,11 @@ func (r *Router) InitRoutes(storage Storage, logger *slog.Logger, cfg *config.Co
 	r.Post("/note", create.New(logger, storage))
 	r.Get("/note/{id}", getnote.New(logger, storage))
 	r.Get("/note/user/{id}", getusernotes.New(logger, storage))
-	// TODO: add update note
-	// TODO: add archive note
-	// TODO: add delete note
+	r.Patch("/note/{id}", updatetitle.New(logger, storage))
+	// TODO: add update note put handler
+	// TODO: add archive note patch handler
+	// TODO: add unarchive note patch handler
+	// TODO: add delete note delete handler
 
 	r.Post("/node", add.New(logger, storage))
 	r.Delete("/node", delete.New(logger, storage))

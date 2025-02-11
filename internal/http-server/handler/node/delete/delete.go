@@ -35,7 +35,6 @@ func New(log *slog.Logger, nodeDeleter NodeDeleter) http.HandlerFunc {
 			log.Error("failed to decode request body", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			render.JSON(w, r, resp.Error("failed to decode request body"))
-			w.WriteHeader(http.StatusBadRequest)
 
 			return
 		}
@@ -44,7 +43,6 @@ func New(log *slog.Logger, nodeDeleter NodeDeleter) http.HandlerFunc {
 			log.Error("invalid request body", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			render.JSON(w, r, resp.Error("invalid request body"))
-			w.WriteHeader(http.StatusBadRequest)
 
 			return
 		}
@@ -54,7 +52,6 @@ func New(log *slog.Logger, nodeDeleter NodeDeleter) http.HandlerFunc {
 			log.Error("not found note node", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			render.JSON(w, r, resp.Error(err.Error()))
-			w.WriteHeader(http.StatusNotFound)
 
 			return
 		}
@@ -62,7 +59,6 @@ func New(log *slog.Logger, nodeDeleter NodeDeleter) http.HandlerFunc {
 			log.Error("failed to delete note node", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			render.JSON(w, r, resp.Error("failed to delete note node"))
-			w.WriteHeader(http.StatusInternalServerError)
 
 			return
 		}
