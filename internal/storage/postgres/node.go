@@ -1,0 +1,106 @@
+package postgres
+
+import (
+	"fmt"
+	"main/internal/models/note"
+)
+
+func (s *Storage) AddNoteNode(noteId int, contentType string, content string) (int, error) {
+	const op = "storage.postgres.CreateNoteNode"
+
+	// begin transaction
+	tx := s.db.MustBegin()
+
+	// creating note node
+	var id int
+
+	err := tx.Get(&id, createBlankNoteNodeQuery, noteId, contentType, content)
+	if err != nil {
+		_ = tx.Rollback()
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	// set updated_at field on note
+	_, err = tx.Exec(setUpdatedAtQuery, noteId)
+	if err != nil {
+		_ = tx.Rollback()
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	// commit transaction
+	if err := tx.Commit(); err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return id, nil
+}
+
+func (s *Storage) DeleteNoteNode(id int) error {
+	const op = "storage.postgres.DeleteNoteNode"
+
+	// begin transaction
+	tx := s.db.MustBegin()
+
+	// deleting node with returning (note_id, order)
+	var tempNoteNode note.NoteNode
+
+	err := tx.Get(&tempNoteNode, deleteNoteNodeQuery, id)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	// getting note_id and order from deleted node
+	var noteId, order = tempNoteNode.NoteId, tempNoteNode.Order
+
+	// update all note nodes' order after deleted node
+	_, err = tx.Exec(updateOrderAfterDeleteQuery, noteId, order)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	// set updated_at field on note
+	_, err = tx.Exec(setUpdatedAtQuery, noteId)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	// commit transaction
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (s *Storage) UpdateNoteNodeContent(id int, content string) error {
+	const op = "storage.postgres.UpdateNoteNodeContent"
+
+	// begin transaction
+	tx := s.db.MustBegin()
+
+	// updating note node with returning note_id
+	var noteId int
+
+	err := tx.Get(&noteId, updateNoteNodeContentQuery, id, content)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	// set updated_at field on note
+	_, err = tx.Exec(setUpdatedAtQuery, noteId)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	// commit transaction
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
