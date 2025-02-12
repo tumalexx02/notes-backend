@@ -5,35 +5,13 @@ import (
 	"main/internal/models/note"
 )
 
-const (
-	createBlankNoteNodeQuery = `
-		INSERT INTO note_nodes (note_id, "order", content_type, content) 
-		VALUES ($1, (SELECT COUNT(*) FROM note_nodes WHERE note_id = $1), $2, $3)
-		RETURNING id;
-	`
-	deleteNoteNodeQuery = `
-		DELETE FROM note_nodes
-		WHERE id = $1
-		RETURNING note_id, "order";
-	`
-	updateNoteNodesOrderQuery = `
-		UPDATE note_nodes
-		SET "order" = "order" - 1
-		WHERE note_id = $1 AND "order" > $2;
-	`
-	updateNoteNodeContentQuery = `
-		UPDATE note_nodes
-		SET content = $2
-		WHERE id = $1
-		RETURNING note_id;
-	`
-)
-
 func (s *Storage) AddNoteNode(noteId int, contentType string, content string) (int, error) {
 	const op = "storage.postgres.CreateNoteNode"
 
+	// begin transaction
 	tx := s.db.MustBegin()
 
+	// creating note node
 	var id int
 
 	err := tx.Get(&id, createBlankNoteNodeQuery, noteId, contentType, content)
@@ -42,12 +20,14 @@ func (s *Storage) AddNoteNode(noteId int, contentType string, content string) (i
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
+	// set updated_at field on note
 	_, err = tx.Exec(setUpdatedAtQuery, noteId)
 	if err != nil {
 		_ = tx.Rollback()
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
+	// commit transaction
 	if err := tx.Commit(); err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
@@ -58,8 +38,10 @@ func (s *Storage) AddNoteNode(noteId int, contentType string, content string) (i
 func (s *Storage) DeleteNoteNode(id int) error {
 	const op = "storage.postgres.DeleteNoteNode"
 
+	// begin transaction
 	tx := s.db.MustBegin()
 
+	// deleting node with returning (note_id, order)
 	var tempNoteNode note.NoteNode
 
 	err := tx.Get(&tempNoteNode, deleteNoteNodeQuery, id)
@@ -68,18 +50,24 @@ func (s *Storage) DeleteNoteNode(id int) error {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	_, err = tx.Exec(updateNoteNodesOrderQuery, tempNoteNode.NoteId, tempNoteNode.Order)
+	// getting note_id and order from deleted node
+	var noteId, order = tempNoteNode.NoteId, tempNoteNode.Order
+
+	// update all note nodes' order after deleted node
+	_, err = tx.Exec(updateOrderAfterDeleteQuery, noteId, order)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	_, err = tx.Exec(setUpdatedAtQuery, tempNoteNode.NoteId)
+	// set updated_at field on note
+	_, err = tx.Exec(setUpdatedAtQuery, noteId)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
+	// commit transaction
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -90,8 +78,10 @@ func (s *Storage) DeleteNoteNode(id int) error {
 func (s *Storage) UpdateNoteNodeContent(id int, content string) error {
 	const op = "storage.postgres.UpdateNoteNodeContent"
 
+	// begin transaction
 	tx := s.db.MustBegin()
 
+	// updating note node with returning note_id
 	var noteId int
 
 	err := tx.Get(&noteId, updateNoteNodeContentQuery, id, content)
@@ -100,18 +90,17 @@ func (s *Storage) UpdateNoteNodeContent(id int, content string) error {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
+	// set updated_at field on note
 	_, err = tx.Exec(setUpdatedAtQuery, noteId)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
+	// commit transaction
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	return nil
 }
-
-// TODO: update order method
-// old_order -> new_order

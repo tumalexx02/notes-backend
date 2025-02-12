@@ -16,6 +16,7 @@ import (
 	getusernotes "main/internal/http-server/handler/note/get-user-notes"
 	"main/internal/http-server/handler/note/unarchive"
 	updatefullnote "main/internal/http-server/handler/note/update-full-note"
+	updateorder "main/internal/http-server/handler/note/update-order"
 	updatetitle "main/internal/http-server/handler/note/update-title"
 	loggerMiddleware "main/internal/http-server/middleware/logger"
 
@@ -37,6 +38,7 @@ type Storage interface {
 	archive.NoteArchiver
 	unarchive.NoteUnarchiver
 	deleteNote.NoteDeleter
+	updateorder.NoteOrderUpdater
 
 	add.NodeAdder
 	deleteNode.NodeDeleter
@@ -73,6 +75,7 @@ func (r *Router) InitRoutes(storage Storage, logger *slog.Logger, cfg *config.Co
 	r.Get("/note/user/{id}", getusernotes.New(logger, storage))
 	r.Patch("/note/{id}/archive", archive.New(logger, storage))
 	r.Patch("/note/{id}/unarchive", unarchive.New(logger, storage))
+	r.Patch("/note/{id}/order", updateorder.New(logger, storage))
 
 	r.Post("/node", add.New(logger, storage))
 	r.Delete("/node/{id}", deleteNode.New(logger, storage))
