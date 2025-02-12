@@ -16,8 +16,10 @@ type Storage struct {
 func New(cfg *config.Config) (*Storage, error) {
 	const op = "storage.postgres.New"
 
+	// get source name from config
 	sourceName := getSourceName(cfg)
 
+	// open connection with db
 	db, err := sqlx.Open(
 		"postgres",
 		sourceName,
@@ -26,6 +28,7 @@ func New(cfg *config.Config) (*Storage, error) {
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
 
+	// init migrations
 	err = initMigrations(db, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
@@ -48,6 +51,8 @@ func initMigrations(db *sqlx.DB, cfg *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
+
+	// TODO: add resetting migrations if reset flag in config is set
 
 	return nil
 }

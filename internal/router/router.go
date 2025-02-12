@@ -46,12 +46,10 @@ type Storage interface {
 }
 
 func New(cfg *config.Config, log *slog.Logger) *Router {
-	if log == nil {
-		panic("logger is nil")
-	}
-
+	// init chi router
 	router := chi.NewRouter()
 
+	// add middlewares
 	router.Use(middleware.RequestID)
 	router.Use(loggerMiddleware.New(log))
 	router.Use(middleware.Recoverer)
@@ -63,21 +61,40 @@ func New(cfg *config.Config, log *slog.Logger) *Router {
 }
 
 func (r *Router) InitRoutes(storage Storage, logger *slog.Logger, cfg *config.Config) {
+	// health check route
 	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
 		render.JSON(w, r, resp.OK())
 	})
 
-	r.Post("/note", create.New(logger, storage))
-	r.Get("/note/{id}", getnote.New(logger, storage))
-	r.Put("/note/{id}", updatefullnote.New(logger, storage))
-	r.Patch("/note/{id}", updatetitle.New(logger, storage))
-	r.Delete("/note/{id}", deleteNote.New(logger, storage))
-	r.Get("/note/user/{id}", getusernotes.New(logger, storage))
-	r.Patch("/note/{id}/archive", archive.New(logger, storage))
-	r.Patch("/note/{id}/unarchive", unarchive.New(logger, storage))
-	r.Patch("/note/{id}/order", updateorder.New(logger, storage))
+	// note routes
+	r.Route("/note", func(noteRouter chi.Router) {
+		// create
+		noteRouter.Post("/", create.New(logger, storage))
 
-	r.Post("/node", add.New(logger, storage))
-	r.Delete("/node/{id}", deleteNode.New(logger, storage))
-	r.Patch("/node/{id}", updatecontent.New(logger, storage))
+		// read
+		noteRouter.Get("/{id}", getnote.New(logger, storage))
+		noteRouter.Get("/user/{id}", getusernotes.New(logger, storage))
+
+		// update
+		noteRouter.Put("/{id}", updatefullnote.New(logger, storage))
+		noteRouter.Patch("/{id}", updatetitle.New(logger, storage))
+		noteRouter.Patch("/{id}/order", updateorder.New(logger, storage))
+
+		// delete (and archive)
+		noteRouter.Patch("/{id}/archive", archive.New(logger, storage))
+		noteRouter.Patch("/{id}/unarchive", unarchive.New(logger, storage))
+		noteRouter.Delete("/{id}", deleteNote.New(logger, storage))
+	})
+
+	// node routes
+	r.Route("/node", func(nodeRouter chi.Router) {
+		// create
+		nodeRouter.Post("/", add.New(logger, storage))
+
+		// update
+		nodeRouter.Patch("/{id}", updatecontent.New(logger, storage))
+
+		// delete
+		nodeRouter.Delete("/{id}", deleteNode.New(logger, storage))
+	})
 }

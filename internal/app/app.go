@@ -19,11 +19,13 @@ type App struct {
 func New(cfg *config.Config, log *slog.Logger) (*App, error) {
 	const op = "app.Start"
 
+	// init storage
 	storage, err := postgres.New(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
+	// init router and routes
 	router := router.New(cfg, log)
 	router.InitRoutes(storage, log, cfg)
 
@@ -40,6 +42,7 @@ func (a *App) Start() error {
 
 	a.logger.Info("starting server", slog.String("address", a.config.HTTPServer.Address))
 
+	// init server
 	srv := &http.Server{
 		Addr:         a.config.HTTPServer.Address,
 		Handler:      a.router,
@@ -48,5 +51,6 @@ func (a *App) Start() error {
 		WriteTimeout: a.config.HTTPServer.Timeout,
 	}
 
+	// start server
 	return fmt.Errorf("%s: %w", op, srv.ListenAndServe())
 }

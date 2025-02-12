@@ -6,6 +6,7 @@ import (
 	"os"
 )
 
+// init logger by env field from config
 func New(cfg *config.Config) *slog.Logger {
 	var log *slog.Logger
 

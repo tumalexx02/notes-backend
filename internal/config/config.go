@@ -36,9 +36,11 @@ type HTTPServer struct {
 func MustLoad() *Config {
 	var cfgPath string
 
+	// load config path from .env
 	_ = godotenv.Load()
 	cfgPath = os.Getenv("CONFIG_PATH")
 
+	// validate config path
 	if cfgPath == "" {
 		log.Fatal("cannot load config")
 		os.Exit(1)
@@ -46,13 +48,16 @@ func MustLoad() *Config {
 
 	cfgPath = strings.Trim(cfgPath, "\"")
 
+	// load config file
 	viper.SetConfigFile(cfgPath)
 
+	// read config
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatal("cannot read config", err)
 		os.Exit(1)
 	}
 
+	// unmarshal config
 	var cfg *Config
 	if err := viper.Unmarshal(&cfg); err != nil {
 		log.Fatal("cannot unmarshal config")
