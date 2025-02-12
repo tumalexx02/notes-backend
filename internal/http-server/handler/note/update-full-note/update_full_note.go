@@ -1,30 +1,29 @@
-package updatetitle
+package updatefullnote
 
 import (
-	"errors"
 	"log/slog"
 	resp "main/internal/http-server/api/response"
-	"main/internal/storage"
+	"main/internal/models/note"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
 )
 
 type Request struct {
-	Title string `json:"title" validate:"required,max=31"`
+	Note note.Note `note:"required"`
 }
 
-type NoteTitleUpdater interface {
-	UpdateNoteTitle(id int, title string) error
+type NoteFUllUpdater interface {
+	UpdateFullNote(id int, note note.Note) (int, error)
 }
 
-func New(log *slog.Logger, noteTitleUpdater NoteTitleUpdater) http.HandlerFunc {
+func New(log *slog.Logger, noteUpdater NoteFUllUpdater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handler.note.updatetitle.New"
+		const op = "handler.note.updatefullnote.New"
 
 		log = log.With(
 			slog.String("op", op),
@@ -49,6 +48,8 @@ func New(log *slog.Logger, noteTitleUpdater NoteTitleUpdater) http.HandlerFunc {
 			return
 		}
 
+		log.Debug("got note", slog.Any("note", req.Note))
+
 		idStr := chi.URLParam(r, "id")
 		id, err := strconv.Atoi(idStr)
 		if err != nil || id < 0 {
@@ -59,25 +60,17 @@ func New(log *slog.Logger, noteTitleUpdater NoteTitleUpdater) http.HandlerFunc {
 			return
 		}
 
-		title := req.Title
+		rows, err := noteUpdater.UpdateFullNote(id, req.Note)
 
-		err = noteTitleUpdater.UpdateNoteTitle(id, title)
-		if errors.Is(err, storage.ErrNoteNotFound) {
-			log.Error("note not found", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-
-			render.JSON(w, r, resp.Error(err.Error()))
-
-			return
-		}
 		if err != nil {
-			log.Error("failed to update note title", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to update note", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to update note title"))
+			render.JSON(w, r, resp.Error("failed to update note"))
 
 			return
 		}
 
-		log.Info("note title updated", slog.Int("id", id))
+		log.Info("note updated", slog.Int("id", id), slog.Int("rows_affected", rows))
 
 		render.JSON(w, r, resp.OK())
 	}

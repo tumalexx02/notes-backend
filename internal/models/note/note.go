@@ -12,6 +12,7 @@ const (
 	ContentTypeList  = "list"
 )
 
+// TODO: add validated fields
 type Note struct {
 	Id         int        `json:"id"`
 	UserId     string     `json:"user_id" db:"user_id"`
@@ -22,6 +23,7 @@ type Note struct {
 	ArchivedAt *time.Time `json:"archived_at,omitempty" db:"archived_at"`
 }
 
+// TODO: add validated fields
 type NoteNode struct {
 	Id          int         `json:"id"`
 	NoteId      int         `json:"note_id" db:"note_id"`

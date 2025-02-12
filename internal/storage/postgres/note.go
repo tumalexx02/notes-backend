@@ -33,11 +33,6 @@ const (
 		SET title = $2, updated_at = NOW()
 		WHERE id = $1;
 	`
-	updateNoteNodeQuery = `
-		UPDATE note_nodes
-		SET content_type = $2, content = $3, updated_at = NOW()
-		WHERE id = $1;
-	`
 	archiveNoteQuery = `
 		UPDATE notes
 		SET archived_at = NOW()
@@ -77,9 +72,6 @@ func (s *Storage) CreateNote(noteTitle string, userId string) (int, error) {
 	return id, nil
 }
 
-// GetUserNotes gets all notes for a given user ID from the database. If the user doesn't have any notes,
-// it returns an empty slice and ErrNoteNotFound. If the operation fails, it returns an error.
-
 func (s *Storage) GetUserNotes(userId string) ([]note.NotePreview, error) {
 	const op = "storage.postgres.GetNotesByUserId"
 
@@ -95,9 +87,6 @@ func (s *Storage) GetUserNotes(userId string) ([]note.NotePreview, error) {
 
 	return notes, nil
 }
-
-// GetNoteById gets a note with the given ID from the database. If the note with the given ID
-// doesn't exist, it returns ErrNoteNotFound. If the operation fails, it returns an error.
 
 func (s *Storage) GetNoteById(id int) (note.Note, error) {
 	const op = "storage.postgres.GetNote"
@@ -127,9 +116,6 @@ func (s *Storage) GetNoteById(id int) (note.Note, error) {
 	return noteFromDB, nil
 }
 
-// UpdateNoteTitle updates the title of a note with the given ID in the database.
-// If the update operation fails, it returns an error.
-
 func (s *Storage) UpdateNoteTitle(id int, title string) error {
 	const op = "storage.postgres.UpdateNoteTitle"
 
@@ -149,39 +135,48 @@ func (s *Storage) UpdateNoteTitle(id int, title string) error {
 	return nil
 }
 
-// UpdateFullNote updates a note with a given ID to the given Note object.
-// It is atomic, meaning that either all of the updates are committed or none of them are.
-// If any part of the update fails, the entire transaction is rolled back and
-// an error is returned.
-
-func (s *Storage) UpdateFullNote(id int, note note.Note) error {
+func (s *Storage) UpdateFullNote(id int, note note.Note) (int, error) {
 	const op = "storage.postgres.UpdateNote"
+
+	var rowsAffected int
 
 	tx := s.db.MustBegin()
 
-	_, err := tx.Exec(updateNoteTitleQuery, note.Id, note.Title)
+	res, err := tx.Exec(updateNoteTitleQuery, id, note.Title)
 	if err != nil {
 		_ = tx.Rollback()
-		return fmt.Errorf("%s: %w", op, err)
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
+	rows, err := res.RowsAffected()
+	if err != nil {
+		_ = tx.Rollback()
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	rowsAffected += int(rows)
+
 	for _, noteNode := range note.Nodes {
-		_, err := tx.Exec(updateNoteNodeQuery, noteNode.Id, noteNode.ContentType, noteNode.Content)
+		res, err := tx.Exec(updateNoteNodeContentQuery, noteNode.Id, noteNode.Content)
 		if err != nil {
 			_ = tx.Rollback()
-			return fmt.Errorf("%s: %w", op, err)
+			return 0, fmt.Errorf("%s: %w", op, err)
 		}
+		rows, err := res.RowsAffected()
+		if err != nil {
+			_ = tx.Rollback()
+			return 0, fmt.Errorf("%s: %w", op, err)
+		}
+
+		rowsAffected += int(rows)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return nil
+	return rowsAffected, nil
 }
-
-// ArchiveNote sets the archived_at field of a note to the current time for the given
-// note ID, effectively archiving the note. Returns an error if the operation fails.
 
 func (s *Storage) ArchiveNote(id int) error {
 	const op = "storage.postgres.ArchiveNote"
@@ -194,9 +189,6 @@ func (s *Storage) ArchiveNote(id int) error {
 	return nil
 }
 
-// UnarchiveNote sets the archived_at field of a note to NULL for the given note ID,
-// effectively unarchiving the note. Returns an error if the operation fails.
-
 func (s *Storage) UnarchiveNote(id int) error {
 	const op = "storage.postgres.ArchiveNote"
 
@@ -207,9 +199,6 @@ func (s *Storage) UnarchiveNote(id int) error {
 
 	return nil
 }
-
-// DeleteNote deletes the note with the given ID from the database. If the note
-// doesn't exist, it returns ErrNoteNotFound.
 
 func (s *Storage) DeleteNote(id int) error {
 	const op = "storage.postgres.DeleteNote"
