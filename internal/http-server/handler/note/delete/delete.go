@@ -13,13 +13,13 @@ import (
 	"github.com/go-chi/render"
 )
 
-type NodeDeleter interface {
-	DeleteNoteNode(id int) error
+type NoteDeleter interface {
+	DeleteNote(id int) error
 }
 
-func New(log *slog.Logger, nodeDeleter NodeDeleter) http.HandlerFunc {
+func New(log *slog.Logger, noteDeleter NoteDeleter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handler.node.delete.New"
+		const op = "handler.note.delete.New"
 
 		log = log.With(
 			slog.String("op", op),
@@ -36,23 +36,23 @@ func New(log *slog.Logger, nodeDeleter NodeDeleter) http.HandlerFunc {
 			return
 		}
 
-		err = nodeDeleter.DeleteNoteNode(id)
-		if errors.Is(err, storage.ErrNoteNodeNotFound) {
-			log.Error("not found note node", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+		err = noteDeleter.DeleteNote(id)
+		if errors.Is(err, storage.ErrNoteNotFound) {
+			log.Error("note not found", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			render.JSON(w, r, resp.Error(err.Error()))
 
 			return
 		}
 		if err != nil {
-			log.Error("failed to delete note node", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to delete note", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to delete note node"))
+			render.JSON(w, r, resp.Error("failed to delete note"))
 
 			return
 		}
 
-		log.Info("note node deleted")
+		log.Info("note deleted")
 
 		render.JSON(w, r, resp.OK())
 	}

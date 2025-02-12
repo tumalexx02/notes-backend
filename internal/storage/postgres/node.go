@@ -1,10 +1,8 @@
 package postgres
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
-	"main/internal/storage"
+	"main/internal/models/note"
 )
 
 const (
@@ -15,17 +13,8 @@ const (
 	`
 	deleteNoteNodeQuery = `
 		DELETE FROM note_nodes
-		WHERE id = $1;
-	`
-	getOrderQuery = `
-		SELECT "order"
-		FROM note_nodes
-		WHERE id = $1;
-	`
-	getNoteIdQuery = `
-		SELECT note_id
-		FROM note_nodes
-		WHERE id = $1;
+		WHERE id = $1
+		RETURNING note_id, "order";
 	`
 	updateNoteNodesOrderQuery = `
 		UPDATE note_nodes
@@ -71,37 +60,21 @@ func (s *Storage) DeleteNoteNode(id int) error {
 
 	tx := s.db.MustBegin()
 
-	var order int
-	err := tx.Get(&order, getOrderQuery, id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			_ = tx.Rollback()
-			return storage.ErrNoteNodeNotFound
-		}
-		_ = tx.Rollback()
-		return fmt.Errorf("%s: %w", op, err)
-	}
+	var tempNoteNode note.NoteNode
 
-	var noteId int
-	err = tx.Get(&noteId, getNoteIdQuery, id)
+	err := tx.Get(&tempNoteNode, deleteNoteNodeQuery, id)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	_, err = tx.Exec(deleteNoteNodeQuery, id)
+	_, err = tx.Exec(updateNoteNodesOrderQuery, tempNoteNode.NoteId, tempNoteNode.Order)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	_, err = tx.Exec(updateNoteNodesOrderQuery, noteId, order)
-	if err != nil {
-		_ = tx.Rollback()
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	_, err = tx.Exec(setUpdatedAtQuery, noteId)
+	_, err = tx.Exec(setUpdatedAtQuery, tempNoteNode.NoteId)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("%s: %w", op, err)

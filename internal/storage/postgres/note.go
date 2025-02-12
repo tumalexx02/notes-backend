@@ -181,9 +181,17 @@ func (s *Storage) UpdateFullNote(id int, note note.Note) (int, error) {
 func (s *Storage) ArchiveNote(id int) error {
 	const op = "storage.postgres.ArchiveNote"
 
-	_, err := s.db.Exec(archiveNoteQuery, id)
+	res, err := s.db.Exec(archiveNoteQuery, id)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if rows == 0 {
+		return storage.ErrNoteNotFound
 	}
 
 	return nil
@@ -192,9 +200,17 @@ func (s *Storage) ArchiveNote(id int) error {
 func (s *Storage) UnarchiveNote(id int) error {
 	const op = "storage.postgres.ArchiveNote"
 
-	_, err := s.db.Exec(archiveNoteQuery, id)
+	res, err := s.db.Exec(unarchiveNoteQuery, id)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if rows == 0 {
+		return storage.ErrNoteNotFound
 	}
 
 	return nil
@@ -212,7 +228,6 @@ func (s *Storage) DeleteNote(id int) error {
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
-
 	if rowsAffected == 0 {
 		return storage.ErrNoteNotFound
 	}
