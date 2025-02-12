@@ -1,5 +1,6 @@
 package postgres
 
+// note nodes' queries
 const (
 	createBlankNoteNodeQuery = `
 		INSERT INTO note_nodes (note_id, "order", content_type, content) 
@@ -42,8 +43,14 @@ const (
 		FROM note_nodes 
 		WHERE note_id = $1 AND "order" = $2;
 	`
+	getNoteNodesQuery = `
+		SELECT * FROM note_nodes
+		WHERE note_id = $1
+		ORDER BY "order";
+	`
 )
 
+// notes' queries
 const (
 	createNoteQuery = `
 		INSERT INTO notes (title, user_id) 
@@ -58,11 +65,6 @@ const (
 		SELECT * FROM notes
 		WHERE user_id = $1
 		ORDER BY updated_at DESC;
-	`
-	getNoteNodesQuery = `
-		SELECT * FROM note_nodes
-		WHERE note_id = $1
-		ORDER BY "order";
 	`
 	updateNoteTitleQuery = `
 		UPDATE notes
