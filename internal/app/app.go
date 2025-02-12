@@ -20,7 +20,7 @@ func New(cfg *config.Config, log *slog.Logger) (*App, error) {
 	const op = "app.Start"
 
 	// init storage
-	storage, err := postgres.New(cfg)
+	storage, err := postgres.New(cfg, log)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}

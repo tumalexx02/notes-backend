@@ -14,5 +14,5 @@ ALTER TABLE notes
 -- +goose Down
 -- +goose StatementBegin
 ALTER TABLE notes DROP COLUMN IF EXISTS user_id;
-DROP TABLE IF EXISTS note_nodes;
+DROP TABLE IF EXISTS users;
 -- +goose StatementEnd

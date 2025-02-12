@@ -21,6 +21,6 @@ CREATE TABLE note_nodes (
 -- +goose Down
 -- +goose StatementBegin
 DROP INDEX IF EXISTS idx_notes_updated_at;
-DROP TABLE IF EXISTS notes;
 DROP TABLE IF EXISTS note_nodes;
+DROP TABLE IF EXISTS notes;
 -- +goose StatementEnd

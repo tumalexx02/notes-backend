@@ -13,6 +13,7 @@ import (
 type Config struct {
 	Env            string `mapstructure:"env"`
 	MigrationsPath string `mapstructure:"migrations_path"`
+	IsReload       bool   `mapstructure:"is_reload"`
 	Postgres       `mapstructure:"postgres"`
 	HTTPServer     `mapstructure:"http_server"`
 }

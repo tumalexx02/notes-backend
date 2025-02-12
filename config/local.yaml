@@ -1,5 +1,6 @@
 env: local
 migrations_path: ./migrations
+is_reload: true
 postgres:
   host: localhost
   port: 5432

@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"fmt"
+	"log/slog"
 	"main/internal/config"
 
 	"github.com/jmoiron/sqlx"
@@ -13,7 +14,7 @@ type Storage struct {
 	db *sqlx.DB
 }
 
-func New(cfg *config.Config) (*Storage, error) {
+func New(cfg *config.Config, log *slog.Logger) (*Storage, error) {
 	const op = "storage.postgres.New"
 
 	// get source name from config
@@ -29,7 +30,7 @@ func New(cfg *config.Config) (*Storage, error) {
 	}
 
 	// init migrations
-	err = initMigrations(db, cfg)
+	err = initMigrations(db, cfg, log)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -39,7 +40,7 @@ func New(cfg *config.Config) (*Storage, error) {
 	}, nil
 }
 
-func initMigrations(db *sqlx.DB, cfg *config.Config) error {
+func initMigrations(db *sqlx.DB, cfg *config.Config, log *slog.Logger) error {
 	const op = "storage.postgres.initMigrations"
 
 	err := goose.SetDialect("postgres")
@@ -47,12 +48,18 @@ func initMigrations(db *sqlx.DB, cfg *config.Config) error {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
+	if cfg.IsReload {
+		if err = goose.Reset(db.DB, cfg.MigrationsPath); err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+
+		log.Info("database reset")
+	}
+
 	err = goose.Up(db.DB, cfg.MigrationsPath)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
-
-	// TODO: add resetting migrations if reset flag in config is set
 
 	return nil
 }
