@@ -6,13 +6,13 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
 )
 
 type Request struct {
-	Title  string `json:"title" validate:"required,max=31"`
-	UserId string `json:"user_id" validate:"required"`
+	Title string `json:"title" validate:"required,max=31"`
 }
 
 type Response struct {
@@ -52,7 +52,10 @@ func New(log *slog.Logger, noteCreator NoteCreator) http.HandlerFunc {
 		}
 
 		title := req.Title
-		userId := req.UserId
+
+		_, claims, _ := jwtauth.FromContext(r.Context())
+
+		userId, _ := claims["user_id"].(string)
 
 		id, err := noteCreator.CreateNote(title, userId)
 		if err != nil {

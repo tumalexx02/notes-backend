@@ -8,10 +8,9 @@ import (
 	"main/internal/storage"
 	"net/http"
 
-	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
-	"github.com/go-playground/validator/v10"
 )
 
 type Response struct {
@@ -32,16 +31,11 @@ func New(log *slog.Logger, notesGetter NotesGetter) http.HandlerFunc {
 			slog.String("request-id", middleware.GetReqID(r.Context())),
 		)
 
-		id := chi.URLParam(r, "id")
-		if err := validator.New().Var(id, "uuid"); err != nil {
-			log.Error("invalid 'id' param", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+		_, claims, _ := jwtauth.FromContext(r.Context())
 
-			render.JSON(w, r, resp.Error("invalid 'id' param"))
+		userId, _ := claims["user_id"].(string)
 
-			return
-		}
-
-		notes, err := notesGetter.GetUserNotes(id)
+		notes, err := notesGetter.GetUserNotes(userId)
 		if errors.Is(err, storage.ErrNoteNotFound) {
 			log.Error("note not found", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 

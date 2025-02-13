@@ -80,11 +80,11 @@ func (r *Router) InitNotesRoutes(storage Storage, logger *slog.Logger, cfg *conf
 		noteRouter.Use(jwtauth.Authenticator(r.jwtauth))
 
 		// create
-		noteRouter.Post("/", create.New(logger, storage))
+		noteRouter.Post("/create", create.New(logger, storage)) // done
 
 		// read
-		noteRouter.Get("/{id}", getnote.New(logger, storage))
-		noteRouter.Get("/user/{id}", getusernotes.New(logger, storage))
+		noteRouter.Get("/{id}", getnote.New(logger, storage))      // done
+		noteRouter.Get("/list", getusernotes.New(logger, storage)) // done
 
 		// update
 		noteRouter.Put("/{id}", updatefullnote.New(logger, storage))

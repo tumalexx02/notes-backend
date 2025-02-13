@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
 )
 
@@ -22,6 +23,8 @@ type Response struct {
 type NoteGetter interface {
 	GetNoteById(id int) (note.Note, error)
 }
+
+// TODO: add check for user id
 
 func New(log *slog.Logger, noteGetter NoteGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -54,6 +57,18 @@ func New(log *slog.Logger, noteGetter NoteGetter) http.HandlerFunc {
 			log.Error("failed to get note", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			render.JSON(w, r, resp.Error("failed to get note"))
+
+			return
+		}
+
+		_, claims, _ := jwtauth.FromContext(r.Context())
+
+		userId, _ := claims["user_id"].(string)
+
+		if note.UserId != userId {
+			log.Error("note not found", slog.Attr{Key: "error", Value: slog.StringValue(storage.ErrNoteNotFound.Error())})
+
+			render.JSON(w, r, resp.Error(storage.ErrNoteNotFound.Error()))
 
 			return
 		}
