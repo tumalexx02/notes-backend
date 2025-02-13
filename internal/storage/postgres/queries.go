@@ -91,3 +91,20 @@ const (
 		WHERE id = $1;
 	`
 )
+
+// users' queries
+const (
+	createUserQuery = `
+		INSERT INTO users (email, name, password_hash) 
+		VALUES ($1, $2, $3)
+		RETURNING id;
+	`
+	getUserByEmailQuery = `
+		SELECT * FROM users
+		WHERE email = $1;
+	`
+	getUserByIdQuery = `
+		SELECT * FROM users
+		WHERE id = $1;
+	`
+)

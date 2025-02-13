@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	resp "main/internal/http-server/api/response"
+	"main/internal/http-server/handler/auth/login"
+	"main/internal/http-server/handler/auth/register"
 	"main/internal/http-server/handler/node/add"
 	deleteNode "main/internal/http-server/handler/node/delete"
 	updatecontent "main/internal/http-server/handler/node/update-content"
@@ -22,11 +24,13 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
 )
 
 type Router struct {
 	*chi.Mux
+	jwtauth *jwtauth.JWTAuth
 }
 
 type Storage interface {
@@ -43,6 +47,9 @@ type Storage interface {
 	add.NodeAdder
 	deleteNode.NodeDeleter
 	updatecontent.NodeUpdater
+
+	register.UserCreator
+	login.UserGetter
 }
 
 func New(cfg *config.Config, log *slog.Logger) *Router {
@@ -57,10 +64,11 @@ func New(cfg *config.Config, log *slog.Logger) *Router {
 
 	return &Router{
 		router,
+		generateAuthToken(cfg),
 	}
 }
 
-func (r *Router) InitRoutes(storage Storage, logger *slog.Logger, cfg *config.Config) {
+func (r *Router) InitNotesRoutes(storage Storage, logger *slog.Logger, cfg *config.Config) {
 	// health check route
 	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
 		render.JSON(w, r, resp.OK())
@@ -68,6 +76,9 @@ func (r *Router) InitRoutes(storage Storage, logger *slog.Logger, cfg *config.Co
 
 	// note routes
 	r.Route("/note", func(noteRouter chi.Router) {
+		noteRouter.Use(jwtauth.Verifier(r.jwtauth))
+		noteRouter.Use(jwtauth.Authenticator(r.jwtauth))
+
 		// create
 		noteRouter.Post("/", create.New(logger, storage))
 
@@ -88,6 +99,9 @@ func (r *Router) InitRoutes(storage Storage, logger *slog.Logger, cfg *config.Co
 
 	// node routes
 	r.Route("/node", func(nodeRouter chi.Router) {
+		nodeRouter.Use(jwtauth.Verifier(r.jwtauth))
+		nodeRouter.Use(jwtauth.Authenticator(r.jwtauth))
+
 		// create
 		nodeRouter.Post("/", add.New(logger, storage))
 
