@@ -3,6 +3,7 @@ package login
 import (
 	"errors"
 	"log/slog"
+	"main/internal/config"
 	resp "main/internal/http-server/api/response"
 	"main/internal/models/user"
 	"main/internal/storage"
@@ -30,7 +31,7 @@ type UserGetter interface {
 	GetUser(email string) (user.User, error)
 }
 
-func New(log *slog.Logger, userGetter UserGetter, tokenAuth *jwtauth.JWTAuth) http.HandlerFunc {
+func New(cfg *config.Config, log *slog.Logger, userGetter UserGetter, tokenAuth *jwtauth.JWTAuth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.auth.login.New"
 
@@ -81,11 +82,10 @@ func New(log *slog.Logger, userGetter UserGetter, tokenAuth *jwtauth.JWTAuth) ht
 			return
 		}
 
-		// TODO: add configurable expiration time
 		// TODO: add refresh token
 		_, tokenString, err := tokenAuth.Encode(map[string]interface{}{
 			"user_id": user.ID,
-			"exp":     time.Now().Add(time.Hour * 24).Unix(),
+			"exp":     time.Now().Add(cfg.Authorization.AccessTTL).Unix(),
 		})
 		if err != nil {
 			log.Error("failed to encode token", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})

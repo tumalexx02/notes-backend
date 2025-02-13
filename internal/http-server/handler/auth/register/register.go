@@ -3,6 +3,7 @@ package register
 import (
 	"errors"
 	"log/slog"
+	"main/internal/config"
 	resp "main/internal/http-server/api/response"
 	"main/internal/storage"
 	"net/http"
@@ -30,7 +31,7 @@ type UserCreator interface {
 	CreateUser(email, name, password string) (string, error)
 }
 
-func New(log *slog.Logger, userCreator UserCreator, tokenAuth *jwtauth.JWTAuth) http.HandlerFunc {
+func New(cfg *config.Config, log *slog.Logger, userCreator UserCreator, tokenAuth *jwtauth.JWTAuth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.auth.register.New"
 
@@ -82,11 +83,10 @@ func New(log *slog.Logger, userCreator UserCreator, tokenAuth *jwtauth.JWTAuth) 
 			return
 		}
 
-		// TODO: add configurable expiration time
 		// TODO: add refresh token
 		_, tokenString, err := tokenAuth.Encode(map[string]interface{}{
 			"user_id": userID,
-			"exp":     time.Now().Add(time.Hour * 24).Unix(),
+			"exp":     time.Now().Add(cfg.Authorization.AccessTTL).Unix(),
 		})
 
 		if err != nil {

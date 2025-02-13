@@ -14,9 +14,9 @@ type Config struct {
 	Env            string `mapstructure:"env"`
 	MigrationsPath string `mapstructure:"migrations_path"`
 	IsReload       bool   `mapstructure:"is_reload"`
-	JWTSecret      string `mapstructure:"jwt_secret"`
 	Postgres       `mapstructure:"postgres"`
 	HTTPServer     `mapstructure:"http_server"`
+	Authorization  `mapstructure:"authorization"`
 }
 
 type Postgres struct {
@@ -33,6 +33,12 @@ type HTTPServer struct {
 	Address     string        `mapstructure:"address"`
 	Timeout     time.Duration `mapstructure:"timeout"`
 	IdleTimeout time.Duration `mapstructure:"idle_timeout"`
+}
+
+type Authorization struct {
+	JWTSecret  string        `mapstructure:"secret"`
+	AccessTTL  time.Duration `mapstructure:"access_ttl"`
+	RefreshTTL time.Duration `mapstructure:"refresh_ttl"`
 }
 
 func MustLoad() *Config {

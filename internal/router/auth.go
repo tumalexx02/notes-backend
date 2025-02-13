@@ -13,8 +13,8 @@ import (
 
 func (r *Router) InitAuthRoutes(storage Storage, logger *slog.Logger, cfg *config.Config) {
 	r.Route("/user", func(userRouter chi.Router) {
-		userRouter.Post("/register", register.New(logger, storage, r.jwtauth))
-		userRouter.Post("/login", login.New(logger, storage, r.jwtauth))
+		userRouter.Post("/register", register.New(cfg, logger, storage, r.jwtauth))
+		userRouter.Post("/login", login.New(cfg, logger, storage, r.jwtauth))
 
 		userRouter.Group(func(protected chi.Router) {
 			protected.Use(jwtauth.Verifier(r.jwtauth))
