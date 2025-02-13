@@ -55,3 +55,5 @@ func (a *App) Start() error {
 	// start server
 	return fmt.Errorf("%s: %w", op, srv.ListenAndServe())
 }
+
+// TODO: add jobs for removing revoked refresh tokens

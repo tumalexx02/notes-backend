@@ -1,7 +1,6 @@
 env: local
 migrations_path: ./app/migrations
 is_reload: false
-jwt_secret: "docker-secret"
 postgres:
   host: db
   port: 5432
@@ -17,4 +16,4 @@ http_server:
 authorization:
   secret: "docker-secret"
   access_ttl: 15m
-  refresh_ttl: 7d
+  refresh_ttl: 300h

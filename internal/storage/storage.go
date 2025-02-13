@@ -8,4 +8,6 @@ var (
 
 	ErrUserAlreadyExists = errors.New("user with this email already exists")
 	ErrUserNotFound      = errors.New("user not found")
+
+	ErrRefreshTokenNotFound = errors.New("refresh token not found")
 )

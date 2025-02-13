@@ -3,13 +3,14 @@ package register
 import (
 	"errors"
 	"log/slog"
+	"main/internal/auth"
 	"main/internal/config"
 	resp "main/internal/http-server/api/response"
 	"main/internal/storage"
 	"net/http"
 	"time"
 
-	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
@@ -24,14 +25,15 @@ type Request struct {
 
 type Response struct {
 	resp.Response
-	Token string `json:"token"`
+	auth.Tokens `json:"tokens"`
 }
 
-type UserCreator interface {
+type Register interface {
 	CreateUser(email, name, password string) (string, error)
+	auth.RefreshTokenCreator
 }
 
-func New(cfg *config.Config, log *slog.Logger, userCreator UserCreator, tokenAuth *jwtauth.JWTAuth) http.HandlerFunc {
+func New(cfg *config.Config, log *slog.Logger, register Register, tokenAuth *jwtauth.JWTAuth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.auth.register.New"
 
@@ -67,7 +69,7 @@ func New(cfg *config.Config, log *slog.Logger, userCreator UserCreator, tokenAut
 			return
 		}
 
-		userID, err := userCreator.CreateUser(req.Email, req.Name, string(hashedPassword))
+		userID, err := register.CreateUser(req.Email, req.Name, string(hashedPassword))
 		if errors.Is(err, storage.ErrUserAlreadyExists) {
 			log.Error("user already exists", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
@@ -83,16 +85,14 @@ func New(cfg *config.Config, log *slog.Logger, userCreator UserCreator, tokenAut
 			return
 		}
 
-		// TODO: add refresh token
-		_, tokenString, err := tokenAuth.Encode(map[string]interface{}{
-			"user_id": userID,
-			"exp":     time.Now().Add(cfg.Authorization.AccessTTL).Unix(),
-		})
+		refreshExp := time.Now().Add(cfg.Authorization.RefreshTTL)
+		accessExp := time.Now().Add(cfg.Authorization.AccessTTL)
 
+		tokens, err := auth.GenerateTokens(register, userID, refreshExp, accessExp, tokenAuth)
 		if err != nil {
-			log.Error("failed to encode token", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to generate tokens", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to encode token"))
+			render.JSON(w, r, resp.Error("failed to generate tokens"))
 
 			return
 		}
@@ -101,7 +101,7 @@ func New(cfg *config.Config, log *slog.Logger, userCreator UserCreator, tokenAut
 
 		render.JSON(w, r, Response{
 			Response: resp.OK(),
-			Token:    tokenString,
+			Tokens:   tokens,
 		})
 	}
 }

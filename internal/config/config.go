@@ -68,7 +68,7 @@ func MustLoad() *Config {
 	// unmarshal config
 	var cfg *Config
 	if err := viper.Unmarshal(&cfg); err != nil {
-		log.Fatal("cannot unmarshal config")
+		log.Fatal("cannot unmarshal config" + err.Error())
 	}
 
 	return cfg

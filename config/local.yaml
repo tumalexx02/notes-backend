@@ -1,6 +1,6 @@
 env: local
 migrations_path: ./migrations
-is_reload: false
+is_reload: true
 postgres:
   host: localhost
   port: 5432
@@ -15,5 +15,5 @@ http_server:
   idle_timeout: 10s
 authorization:
   secret: "local-secret"
-  access_ttl: 15m
-  refresh_ttl: 7d
+  access_ttl: 1m
+  refresh_ttl: 2m

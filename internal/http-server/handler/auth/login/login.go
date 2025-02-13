@@ -3,6 +3,7 @@ package login
 import (
 	"errors"
 	"log/slog"
+	"main/internal/auth"
 	"main/internal/config"
 	resp "main/internal/http-server/api/response"
 	"main/internal/models/user"
@@ -10,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
@@ -24,14 +25,15 @@ type Request struct {
 
 type Response struct {
 	resp.Response
-	Token string `json:"token"`
+	Tokens auth.Tokens `json:"tokens"`
 }
 
-type UserGetter interface {
+type Loginer interface {
 	GetUser(email string) (user.User, error)
+	auth.RefreshTokenCreator
 }
 
-func New(cfg *config.Config, log *slog.Logger, userGetter UserGetter, tokenAuth *jwtauth.JWTAuth) http.HandlerFunc {
+func New(cfg *config.Config, log *slog.Logger, loginer Loginer, tokenAuth *jwtauth.JWTAuth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.auth.login.New"
 
@@ -58,7 +60,7 @@ func New(cfg *config.Config, log *slog.Logger, userGetter UserGetter, tokenAuth 
 			return
 		}
 
-		user, err := userGetter.GetUser(req.Email)
+		userFromDb, err := loginer.GetUser(req.Email)
 		if errors.Is(err, storage.ErrUserNotFound) {
 			log.Error("user not found", slog.Attr{Key: "email", Value: slog.StringValue(req.Email)})
 
@@ -74,7 +76,7 @@ func New(cfg *config.Config, log *slog.Logger, userGetter UserGetter, tokenAuth 
 			return
 		}
 
-		if !checkPassword(req.Password, user.PasswordHash) {
+		if !checkPassword(req.Password, userFromDb.PasswordHash) {
 			log.Error("invalid password", slog.Attr{Key: "email", Value: slog.StringValue(req.Email)})
 
 			render.JSON(w, r, resp.Error("invalid password"))
@@ -82,22 +84,21 @@ func New(cfg *config.Config, log *slog.Logger, userGetter UserGetter, tokenAuth 
 			return
 		}
 
-		// TODO: add refresh token
-		_, tokenString, err := tokenAuth.Encode(map[string]interface{}{
-			"user_id": user.ID,
-			"exp":     time.Now().Add(cfg.Authorization.AccessTTL).Unix(),
-		})
-		if err != nil {
-			log.Error("failed to encode token", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+		refreshExp := time.Now().Add(cfg.Authorization.RefreshTTL)
+		accessExp := time.Now().Add(cfg.Authorization.AccessTTL)
 
-			render.JSON(w, r, resp.Error("failed to encode token"))
+		tokens, err := auth.GenerateTokens(loginer, userFromDb.ID, refreshExp, accessExp, tokenAuth)
+		if err != nil {
+			log.Error("failed to generate tokens", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+
+			render.JSON(w, r, resp.Error("failed to generate tokens"))
 
 			return
 		}
 
 		log.Info("success login", slog.Attr{Key: "email", Value: slog.StringValue(req.Email)})
 
-		render.JSON(w, r, Response{resp.OK(), tokenString})
+		render.JSON(w, r, Response{resp.OK(), tokens})
 	}
 }
 

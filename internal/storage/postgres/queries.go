@@ -108,3 +108,34 @@ const (
 		WHERE id = $1;
 	`
 )
+
+// auth tokens' queries
+const (
+	createRefreshTokenQuery = `
+		INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at) 
+		VALUES ($1, $2, $3, $4)
+		RETURNING id;
+	`
+	getRefreshTokenByIdQuery = `
+		SELECT * FROM refresh_tokens
+		WHERE id = $1;
+	`
+	revokeRefreshTokenByIdQuery = `
+		UPDATE refresh_tokens
+		SET revoked = TRUE
+		WHERE id = $1;
+	`
+	revokeExpiredRefreshTokensQuery = `
+		UPDATE refresh_tokens
+		SET revoked = TRUE
+		WHERE expires_at < NOW() AND revoked = TRUE;
+	`
+	deleteWeekOldRefreshTokensQuery = `
+		DELETE FROM refresh_tokens
+		WHERE expires_at < NOW() - INTERVAL '7 days';
+	`
+	deleteRefreshTokenQuery = `
+		DELETE FROM refresh_tokens
+		WHERE id = $1;
+	`
+)

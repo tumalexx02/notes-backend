@@ -6,8 +6,6 @@ import (
 	"net/http"
 
 	resp "main/internal/http-server/api/response"
-	"main/internal/http-server/handler/auth/login"
-	"main/internal/http-server/handler/auth/register"
 	"main/internal/http-server/handler/node/add"
 	deleteNode "main/internal/http-server/handler/node/delete"
 	updatecontent "main/internal/http-server/handler/node/update-content"
@@ -34,6 +32,12 @@ type Router struct {
 }
 
 type Storage interface {
+	Noter
+	NoteNoder
+	Authorizer
+}
+
+type Noter interface {
 	create.NoteCreator
 	getnote.NoteGetter
 	getusernotes.NotesGetter
@@ -43,13 +47,12 @@ type Storage interface {
 	unarchive.NoteUnarchiver
 	deleteNote.NoteDeleter
 	updateorder.NoteOrderUpdater
+}
 
+type NoteNoder interface {
 	add.NodeAdder
 	deleteNode.NodeDeleter
 	updatecontent.NodeUpdater
-
-	register.UserCreator
-	login.UserGetter
 }
 
 func New(cfg *config.Config, log *slog.Logger) *Router {
