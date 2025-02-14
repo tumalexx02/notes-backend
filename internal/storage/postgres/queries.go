@@ -90,6 +90,9 @@ const (
 		SET updated_at = NOW()
 		WHERE id = $1;
 	`
+	isUserNoteOwnerQuery = `
+		SELECT COUNT(*) FROM notes
+		WHERE id = $2 AND user_id = $1;`
 )
 
 // users' queries

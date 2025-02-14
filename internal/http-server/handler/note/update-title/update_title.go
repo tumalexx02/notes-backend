@@ -4,14 +4,12 @@ import (
 	"errors"
 	"log/slog"
 	resp "main/internal/http-server/api/response"
+	"main/internal/http-server/api/validate"
 	"main/internal/storage"
 	"net/http"
-	"strconv"
 
-	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
-	"github.com/go-playground/validator/v10"
 )
 
 type Request struct {
@@ -20,6 +18,7 @@ type Request struct {
 
 type NoteTitleUpdater interface {
 	UpdateNoteTitle(id int, title string) error
+	validate.UserVerifier
 }
 
 func New(log *slog.Logger, noteTitleUpdater NoteTitleUpdater) http.HandlerFunc {
@@ -32,30 +31,17 @@ func New(log *slog.Logger, noteTitleUpdater NoteTitleUpdater) http.HandlerFunc {
 		)
 
 		var req Request
-
-		if err := render.DecodeJSON(r.Body, &req); err != nil {
-			log.Error("failed to decode request body", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-
-			render.JSON(w, r, resp.Error("failed to decode request body"))
-
+		if err := validate.DecodeAndValidateRequestJson(&req, w, r, log); err != nil {
 			return
 		}
 
-		if err := validator.New().Struct(req); err != nil {
-			log.Error("invalid request body", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-
-			render.JSON(w, r, resp.Error("invalid request body"))
-
+		id, err := validate.GetIntURLParam("id", w, r, log)
+		if err != nil {
 			return
 		}
 
-		idStr := chi.URLParam(r, "id")
-		id, err := strconv.Atoi(idStr)
-		if err != nil || id < 0 {
-			log.Error("invalid 'id' param", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-
-			render.JSON(w, r, resp.Error("invalid 'id' param"))
-
+		err = validate.VerifyUser(id, noteTitleUpdater, w, r, log)
+		if err != nil {
 			return
 		}
 

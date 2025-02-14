@@ -79,15 +79,16 @@ func (r *Router) InitNotesRoutes(storage Storage, logger *slog.Logger, cfg *conf
 
 	// note routes
 	r.Route("/note", func(noteRouter chi.Router) {
+		// TODO: create custom verifier
 		noteRouter.Use(jwtauth.Verifier(r.jwtauth))
 		noteRouter.Use(jwtauth.Authenticator(r.jwtauth))
 
 		// create
-		noteRouter.Post("/create", create.New(logger, storage)) // done
+		noteRouter.Post("/create", create.New(logger, storage))
 
 		// read
-		noteRouter.Get("/{id}", getnote.New(logger, storage))      // done
-		noteRouter.Get("/list", getusernotes.New(logger, storage)) // done
+		noteRouter.Get("/{id}", getnote.New(logger, storage))
+		noteRouter.Get("/list", getusernotes.New(logger, storage))
 
 		// update
 		noteRouter.Put("/{id}", updatefullnote.New(logger, storage))
@@ -104,6 +105,8 @@ func (r *Router) InitNotesRoutes(storage Storage, logger *slog.Logger, cfg *conf
 	r.Route("/node", func(nodeRouter chi.Router) {
 		nodeRouter.Use(jwtauth.Verifier(r.jwtauth))
 		nodeRouter.Use(jwtauth.Authenticator(r.jwtauth))
+
+		// TODO: add check for user id
 
 		// create
 		nodeRouter.Post("/", add.New(logger, storage))
