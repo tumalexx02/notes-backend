@@ -13,7 +13,8 @@ import (
 )
 
 type NodeDeleter interface {
-	DeleteNoteNode(id int) error
+	DeleteNoteNode(int) error
+	validate.UserVerifier
 }
 
 func New(log *slog.Logger, nodeDeleter NodeDeleter) http.HandlerFunc {
@@ -26,6 +27,11 @@ func New(log *slog.Logger, nodeDeleter NodeDeleter) http.HandlerFunc {
 		)
 
 		id, err := validate.GetIntURLParam("id", w, r, log)
+		if err != nil {
+			return
+		}
+
+		err = validate.VerifyUserNoteNode(id, nodeDeleter, w, r, log)
 		if err != nil {
 			return
 		}

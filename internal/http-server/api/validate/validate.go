@@ -18,6 +18,7 @@ import (
 
 type UserVerifier interface {
 	IsUserNoteOwner(userId string, noteId int) (bool, error)
+	IsUserNoteNodeOwner(userId string, noteNodeId int) (bool, error)
 }
 
 func DecodeRequestJson[T any](dest *T, w http.ResponseWriter, r *http.Request, log *slog.Logger) error {
@@ -75,7 +76,7 @@ func GetIntURLParam(paramName string, w http.ResponseWriter, r *http.Request, lo
 	return intParam, nil
 }
 
-func VerifyUser(id int, userVerifier UserVerifier, w http.ResponseWriter, r *http.Request, log *slog.Logger) error {
+func VerifyUserNote(id int, userVerifier UserVerifier, w http.ResponseWriter, r *http.Request, log *slog.Logger) error {
 	_, claims, _ := jwtauth.FromContext(r.Context())
 
 	userId, _ := claims["user_id"].(string)
@@ -91,6 +92,31 @@ func VerifyUser(id int, userVerifier UserVerifier, w http.ResponseWriter, r *htt
 
 	if !isOwner {
 		log.Error("user is not note owner", "error", resperrors.ErrUserNotOwner, "user_id", userId, "note_id", id)
+
+		render.JSON(w, r, resp.Error(resperrors.ErrUserNotOwner.Error()))
+
+		return resperrors.ErrUserNotOwner
+	}
+
+	return nil
+}
+
+func VerifyUserNoteNode(id int, userVerifier UserVerifier, w http.ResponseWriter, r *http.Request, log *slog.Logger) error {
+	_, claims, _ := jwtauth.FromContext(r.Context())
+
+	userId, _ := claims["user_id"].(string)
+
+	isOwner, err := userVerifier.IsUserNoteNodeOwner(userId, id)
+	if err != nil {
+		log.Error("failed to check note node owner", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+
+		render.JSON(w, r, resp.Error("failed to check note node owner"))
+
+		return err
+	}
+
+	if !isOwner {
+		log.Error("user is not note node owner", "error", resperrors.ErrUserNotOwner, "user_id", userId, "note_node_id", id)
 
 		render.JSON(w, r, resp.Error(resperrors.ErrUserNotOwner.Error()))
 

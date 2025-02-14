@@ -48,6 +48,10 @@ const (
 		WHERE note_id = $1
 		ORDER BY "order";
 	`
+	isUserNodeOwnerQuery = `
+    SELECT COUNT(*) FROM note_nodes
+    WHERE id = $2 AND (note_id IN (SELECT id FROM notes WHERE user_id = $1));
+	`
 )
 
 // notes' queries

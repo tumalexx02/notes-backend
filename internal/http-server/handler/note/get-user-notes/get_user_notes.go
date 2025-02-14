@@ -32,7 +32,6 @@ func New(log *slog.Logger, notesGetter NotesGetter) http.HandlerFunc {
 		)
 
 		_, claims, _ := jwtauth.FromContext(r.Context())
-
 		userId, _ := claims["user_id"].(string)
 
 		notes, err := notesGetter.GetUserNotes(userId)

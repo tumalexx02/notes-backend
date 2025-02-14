@@ -16,6 +16,7 @@ type Request struct {
 
 type NodeUpdater interface {
 	UpdateNoteNodeContent(id int, content string) error
+	validate.UserVerifier
 }
 
 func New(log *slog.Logger, nodeUpdater NodeUpdater) http.HandlerFunc {
@@ -32,12 +33,17 @@ func New(log *slog.Logger, nodeUpdater NodeUpdater) http.HandlerFunc {
 			return
 		}
 
-		id, err := validate.GetIntURLParam("id", w, r, log)
+		nodeId, err := validate.GetIntURLParam("id", w, r, log)
 		if err != nil {
 			return
 		}
 
-		if err := nodeUpdater.UpdateNoteNodeContent(id, req.Content); err != nil {
+		err = validate.VerifyUserNoteNode(nodeId, nodeUpdater, w, r, log)
+		if err != nil {
+			return
+		}
+
+		if err := nodeUpdater.UpdateNoteNodeContent(nodeId, req.Content); err != nil {
 			log.Error("failed to update note node content", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			render.JSON(w, r, resp.Error("failed to update note node content"))

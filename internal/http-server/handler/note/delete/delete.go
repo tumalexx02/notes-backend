@@ -31,7 +31,7 @@ func New(log *slog.Logger, noteDeleter NoteDeleter) http.HandlerFunc {
 			return
 		}
 
-		err = validate.VerifyUser(id, noteDeleter, w, r, log)
+		err = validate.VerifyUserNote(id, noteDeleter, w, r, log)
 		if err != nil {
 			return
 		}

@@ -95,7 +95,7 @@ func New(cfg *config.Config, log *slog.Logger, refreshTokener RefreshTokener, to
 		if refreshToken.Revoked {
 			log.Error("token revoked", slog.Attr{Key: "error", Value: slog.StringValue("token revoked")})
 
-			render.JSON(w, r, resp.Error("token revoked"))
+			render.JSON(w, r, resp.RevokedRefreshToken())
 
 			return
 		}
@@ -105,7 +105,7 @@ func New(cfg *config.Config, log *slog.Logger, refreshTokener RefreshTokener, to
 
 			_ = refreshTokener.RevokeRefreshTokenById(refreshToken.Id)
 
-			render.JSON(w, r, resp.Error("token expired"))
+			render.JSON(w, r, resp.RevokedRefreshToken())
 
 			return
 		}

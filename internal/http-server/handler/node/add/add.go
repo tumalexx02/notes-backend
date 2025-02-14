@@ -23,6 +23,7 @@ type Response struct {
 
 type NodeAdder interface {
 	AddNoteNode(noteId int, contentType string, content string) (int, error)
+	validate.UserVerifier
 }
 
 func New(log *slog.Logger, noteAdder NodeAdder) http.HandlerFunc {
@@ -40,6 +41,12 @@ func New(log *slog.Logger, noteAdder NodeAdder) http.HandlerFunc {
 		}
 
 		noteId := req.NoteId
+
+		err := validate.VerifyUserNote(noteId, noteAdder, w, r, log)
+		if err != nil {
+			return
+		}
+
 		contentType := req.ContentType
 		content := req.Content
 
