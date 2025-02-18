@@ -6,6 +6,7 @@ import (
 	"main/internal/auth"
 	"main/internal/config"
 	resp "main/internal/http-server/api/response"
+	"main/internal/http-server/api/validate"
 	"main/internal/models/user"
 	"main/internal/storage"
 	"net/http"
@@ -13,7 +14,6 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
-	"github.com/go-playground/validator/v10"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -43,19 +43,7 @@ func New(cfg *config.Config, log *slog.Logger, loginer Loginer, tokenAuth *jwtau
 
 		var req Request
 
-		if err := render.DecodeJSON(r.Body, &req); err != nil {
-			log.Error("failed to decode request body", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-
-			render.JSON(w, r, resp.Error("failed to decode request body"))
-
-			return
-		}
-
-		if err := validator.New().Struct(req); err != nil {
-			log.Error("invalid request body", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-
-			render.JSON(w, r, resp.Error("invalid request body"))
-
+		if err := validate.DecodeAndValidateRequestJson(&req, w, r, log); err != nil {
 			return
 		}
 

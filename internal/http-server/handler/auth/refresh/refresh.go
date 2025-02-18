@@ -5,13 +5,13 @@ import (
 	"main/internal/auth"
 	"main/internal/config"
 	resp "main/internal/http-server/api/response"
+	"main/internal/http-server/api/validate"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
-	"github.com/go-playground/validator/v10"
 )
 
 type Request struct {
@@ -39,19 +39,7 @@ func New(cfg *config.Config, log *slog.Logger, refreshTokener RefreshTokener, to
 
 		var req Request
 
-		if err := render.DecodeJSON(r.Body, &req); err != nil {
-			log.Error("failed to decode request body", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-
-			render.JSON(w, r, resp.Error("failed to decode request body"))
-
-			return
-		}
-
-		if err := validator.New().Struct(req); err != nil {
-			log.Error("invalid request body", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-
-			render.JSON(w, r, resp.Error("invalid request body"))
-
+		if err := validate.DecodeAndValidateRequestJson(&req, w, r, log); err != nil {
 			return
 		}
 
@@ -65,7 +53,6 @@ func New(cfg *config.Config, log *slog.Logger, refreshTokener RefreshTokener, to
 		}
 
 		tokenId, ok := token.Get("token_id")
-
 		if !ok {
 			log.Error("failed to get token id", slog.Attr{Key: "error", Value: slog.StringValue("failed to get token id")})
 
@@ -93,15 +80,6 @@ func New(cfg *config.Config, log *slog.Logger, refreshTokener RefreshTokener, to
 		}
 
 		hashedRequestRefreshToken := auth.HashRefreshToken(req.RefreshToken, cfg.Authorization.Salt)
-
-		if refreshToken.TokenHash != hashedRequestRefreshToken {
-			log.Error("invalid refresh token", slog.Attr{Key: "error", Value: slog.StringValue("invalid refresh token")})
-
-			render.JSON(w, r, resp.Error("invalid refresh token"))
-
-			return
-		}
-
 		if refreshToken.Revoked {
 			log.Error("token revoked", slog.Attr{Key: "error", Value: slog.StringValue("token revoked")})
 
@@ -109,13 +87,19 @@ func New(cfg *config.Config, log *slog.Logger, refreshTokener RefreshTokener, to
 
 			return
 		}
-
 		if refreshToken.ExpiresAt.Before(time.Now()) {
 			log.Error("token expired", slog.Attr{Key: "error", Value: slog.StringValue("token expired")})
 
 			_ = refreshTokener.RevokeRefreshTokenById(refreshToken.Id)
 
 			render.JSON(w, r, resp.RevokedRefreshToken())
+
+			return
+		}
+		if refreshToken.TokenHash != hashedRequestRefreshToken {
+			log.Error("invalid refresh token", slog.Attr{Key: "error", Value: slog.StringValue("invalid refresh token")})
+
+			render.JSON(w, r, resp.Error("invalid refresh token"))
 
 			return
 		}

@@ -8,7 +8,6 @@ import (
 	"os"
 )
 
-// TODO: add to auth handlers refactored code
 // TODO: change revoke logic to delete refresh token
 // TODO: custom error messages (for separate feature)
 
