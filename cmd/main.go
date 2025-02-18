@@ -14,7 +14,7 @@ func main() {
 	// config init
 	cfg := config.MustLoad()
 
-	// logger init``
+	// logger init
 	log := logger.New(cfg)
 
 	// app init
