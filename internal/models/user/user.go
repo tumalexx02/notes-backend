@@ -9,4 +9,8 @@ type User struct {
 	UpdatedAt    string `json:"updated_at" db:"updated_at"`
 }
 
-// TODO: add short user struct
+type UserPreview struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}
