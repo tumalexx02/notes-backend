@@ -3,14 +3,12 @@ package updatefullnote
 import (
 	"log/slog"
 	resp "main/internal/http-server/api/response"
+	"main/internal/http-server/api/validate"
 	"main/internal/models/note"
 	"net/http"
-	"strconv"
 
-	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
-	"github.com/go-playground/validator/v10"
 )
 
 type Request struct {
@@ -19,6 +17,7 @@ type Request struct {
 
 type NoteFUllUpdater interface {
 	UpdateFullNote(id int, note note.Note) (int, error)
+	validate.UserVerifier
 }
 
 func New(log *slog.Logger, noteUpdater NoteFUllUpdater) http.HandlerFunc {
@@ -31,37 +30,21 @@ func New(log *slog.Logger, noteUpdater NoteFUllUpdater) http.HandlerFunc {
 		)
 
 		var req Request
-
-		if err := render.DecodeJSON(r.Body, &req); err != nil {
-			log.Error("failed to decode request body", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-
-			render.JSON(w, r, resp.Error("failed to decode request body"))
-
+		if err := validate.DecodeRequestJson(&req, w, r, log); err != nil {
 			return
 		}
 
-		if err := validator.New().Struct(req); err != nil {
-			log.Error("invalid request body", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-
-			render.JSON(w, r, resp.Error("invalid request body"))
-
+		id, err := validate.GetIntURLParam("id", w, r, log)
+		if err != nil {
 			return
 		}
 
-		log.Debug("got note", slog.Any("note", req.Note))
-
-		idStr := chi.URLParam(r, "id")
-		id, err := strconv.Atoi(idStr)
-		if err != nil || id < 0 {
-			log.Error("invalid 'id' param", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-
-			render.JSON(w, r, resp.Error("invalid 'id' param"))
-
+		err = validate.VerifyUserNote(id, noteUpdater, w, r, log)
+		if err != nil {
 			return
 		}
 
 		rows, err := noteUpdater.UpdateFullNote(id, req.Note)
-
 		if err != nil {
 			log.Error("failed to update note", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 

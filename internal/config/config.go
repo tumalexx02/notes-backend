@@ -16,6 +16,7 @@ type Config struct {
 	IsReload       bool   `mapstructure:"is_reload"`
 	Postgres       `mapstructure:"postgres"`
 	HTTPServer     `mapstructure:"http_server"`
+	Authorization  `mapstructure:"authorization"`
 }
 
 type Postgres struct {
@@ -32,6 +33,13 @@ type HTTPServer struct {
 	Address     string        `mapstructure:"address"`
 	Timeout     time.Duration `mapstructure:"timeout"`
 	IdleTimeout time.Duration `mapstructure:"idle_timeout"`
+}
+
+type Authorization struct {
+	JWTSecret  string        `mapstructure:"secret"`
+	AccessTTL  time.Duration `mapstructure:"access_ttl"`
+	RefreshTTL time.Duration `mapstructure:"refresh_ttl"`
+	Salt       string        `mapstructure:"salt"`
 }
 
 func MustLoad() *Config {
@@ -61,7 +69,7 @@ func MustLoad() *Config {
 	// unmarshal config
 	var cfg *Config
 	if err := viper.Unmarshal(&cfg); err != nil {
-		log.Fatal("cannot unmarshal config")
+		log.Fatal("cannot unmarshal config" + err.Error())
 	}
 
 	return cfg

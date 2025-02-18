@@ -44,6 +44,10 @@ func (s *Storage) GetUserNotes(userId string) ([]note.NotePreview, error) {
 		return notes, fmt.Errorf("%s: %w", op, err)
 	}
 
+	if notes == nil {
+		return []note.NotePreview{}, nil
+	}
+
 	return notes, nil
 }
 
@@ -242,6 +246,19 @@ func (s *Storage) UpdateNoteNodeOrder(noteId int, oldOrder int, newOrder int) er
 	}
 
 	return nil
+}
+
+func (s *Storage) IsUserNoteOwner(userId string, noteId int) (bool, error) {
+	const op = "storage.postgres.IsUserNoteOwner"
+
+	var exists int
+
+	err := s.db.Get(&exists, isUserNoteOwnerQuery, userId, noteId)
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return exists == 1, nil
 }
 
 func updateAllNestedNodes(tx *sqlx.Tx, op string, nodes []note.NoteNode) (int64, error) {

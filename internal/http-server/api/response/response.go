@@ -16,6 +16,7 @@ func OK() Response {
 	}
 }
 
+// TODO: make error argument not string
 func Error(msg string) Response {
 	return Response{
 		Status: StatusError,

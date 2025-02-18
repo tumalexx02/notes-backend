@@ -3,12 +3,11 @@ package add
 import (
 	"log/slog"
 	resp "main/internal/http-server/api/response"
-	"main/internal/models/note"
+	"main/internal/http-server/api/validate"
 	"net/http"
 
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
-	"github.com/go-playground/validator/v10"
 )
 
 type Request struct {
@@ -24,6 +23,7 @@ type Response struct {
 
 type NodeAdder interface {
 	AddNoteNode(noteId int, contentType string, content string) (int, error)
+	validate.UserVerifier
 }
 
 func New(log *slog.Logger, noteAdder NodeAdder) http.HandlerFunc {
@@ -36,30 +36,17 @@ func New(log *slog.Logger, noteAdder NodeAdder) http.HandlerFunc {
 		)
 
 		var req Request
-
-		if err := render.DecodeJSON(r.Body, &req); err != nil {
-			log.Error("failed to decode request body", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-
-			render.JSON(w, r, resp.Error("failed to decode request body"))
-
-			return
-		}
-
-		val := validator.New()
-		if err := val.RegisterValidation("custom_url", categoryValidator); err != nil {
-			log.Error("validator init error", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-			return
-		}
-
-		if err := val.Struct(req); err != nil {
-			log.Error("invalid request body", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-
-			render.JSON(w, r, resp.Error("invalid request body"))
-
+		if err := validate.DecodeAndValidateRequestJson(&req, w, r, log); err != nil {
 			return
 		}
 
 		noteId := req.NoteId
+
+		err := validate.VerifyUserNote(noteId, noteAdder, w, r, log)
+		if err != nil {
+			return
+		}
+
 		contentType := req.ContentType
 		content := req.Content
 
@@ -78,15 +65,5 @@ func New(log *slog.Logger, noteAdder NodeAdder) http.HandlerFunc {
 			Response: resp.OK(),
 			Id:       id,
 		})
-	}
-}
-
-func categoryValidator(fl validator.FieldLevel) bool {
-	category := fl.Field().String()
-	switch category {
-	case note.ContentTypeImage, note.ContentTypeText, note.ContentTypeList:
-		return true
-	default:
-		return false
 	}
 }

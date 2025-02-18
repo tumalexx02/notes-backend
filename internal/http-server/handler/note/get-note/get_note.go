@@ -4,12 +4,11 @@ import (
 	"errors"
 	"log/slog"
 	resp "main/internal/http-server/api/response"
+	"main/internal/http-server/api/validate"
 	"main/internal/models/note"
 	"main/internal/storage"
 	"net/http"
-	"strconv"
 
-	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 )
@@ -21,6 +20,7 @@ type Response struct {
 
 type NoteGetter interface {
 	GetNoteById(id int) (note.Note, error)
+	validate.UserVerifier
 }
 
 func New(log *slog.Logger, noteGetter NoteGetter) http.HandlerFunc {
@@ -32,13 +32,8 @@ func New(log *slog.Logger, noteGetter NoteGetter) http.HandlerFunc {
 			slog.String("request-id", middleware.GetReqID(r.Context())),
 		)
 
-		idStr := chi.URLParam(r, "id")
-		id, err := strconv.Atoi(idStr)
-		if err != nil || id < 0 {
-			log.Error("invalid 'id' param", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-
-			render.JSON(w, r, resp.Error("invalid 'id' param"))
-
+		id, err := validate.GetIntURLParam("id", w, r, log)
+		if err != nil {
 			return
 		}
 
@@ -55,6 +50,11 @@ func New(log *slog.Logger, noteGetter NoteGetter) http.HandlerFunc {
 
 			render.JSON(w, r, resp.Error("failed to get note"))
 
+			return
+		}
+
+		err = validate.VerifyUserNote(note.Id, noteGetter, w, r, log)
+		if err != nil {
 			return
 		}
 

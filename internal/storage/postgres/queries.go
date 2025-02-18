@@ -48,6 +48,10 @@ const (
 		WHERE note_id = $1
 		ORDER BY "order";
 	`
+	isUserNodeOwnerQuery = `
+    SELECT COUNT(*) FROM note_nodes
+    WHERE id = $2 AND (note_id IN (SELECT id FROM notes WHERE user_id = $1));
+	`
 )
 
 // notes' queries
@@ -88,6 +92,47 @@ const (
 	setUpdatedAtQuery = `
 		UPDATE notes
 		SET updated_at = NOW()
+		WHERE id = $1;
+	`
+	isUserNoteOwnerQuery = `
+		SELECT COUNT(*) FROM notes
+		WHERE id = $2 AND user_id = $1;`
+)
+
+// users' queries
+const (
+	createUserQuery = `
+		INSERT INTO users (email, name, password_hash) 
+		VALUES ($1, $2, $3)
+		RETURNING id;
+	`
+	getUserByEmailQuery = `
+		SELECT * FROM users
+		WHERE email = $1;
+	`
+	getUserByIdQuery = `
+		SELECT * FROM users
+		WHERE id = $1;
+	`
+)
+
+// auth tokens' queries
+const (
+	createRefreshTokenQuery = `
+		INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at) 
+		VALUES ($1, $2, $3, $4)
+		RETURNING id;
+	`
+	getRefreshTokenByIdQuery = `
+		SELECT * FROM refresh_tokens
+		WHERE id = $1;
+	`
+	deleteExpiredRefreshTokensQuery = `
+		DELETE FROM refresh_tokens
+		WHERE expires_at < NOW();
+	`
+	deleteRefreshTokenQuery = `
+		DELETE FROM refresh_tokens
 		WHERE id = $1;
 	`
 )

@@ -104,3 +104,16 @@ func (s *Storage) UpdateNoteNodeContent(id int, content string) error {
 
 	return nil
 }
+
+func (s *Storage) IsUserNoteNodeOwner(userId string, noteNodeId int) (bool, error) {
+	const op = "storage.postgres.IsUserNoteNodeOwner"
+
+	var exists int
+
+	err := s.db.Get(&exists, isUserNodeOwnerQuery, userId, noteNodeId)
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return exists == 1, nil
+}
