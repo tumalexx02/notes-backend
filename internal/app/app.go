@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"main/internal/config"
@@ -40,6 +41,13 @@ func New(cfg *config.Config, log *slog.Logger) (*App, error) {
 func (a *App) Start() error {
 	const op = "app.Start"
 
+	// init context
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// init jobs
+	startTokensRevokingJob(ctx, a.logger, a.storage)
+
 	a.logger.Info("starting server", slog.String("address", a.config.HTTPServer.Address))
 
 	// init server
@@ -54,5 +62,3 @@ func (a *App) Start() error {
 	// start server
 	return fmt.Errorf("%s: %w", op, srv.ListenAndServe())
 }
-
-// TODO: add jobs for removing revoked refresh tokens

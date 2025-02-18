@@ -127,19 +127,9 @@ const (
 		SELECT * FROM refresh_tokens
 		WHERE id = $1;
 	`
-	revokeRefreshTokenByIdQuery = `
-		UPDATE refresh_tokens
-		SET revoked = TRUE
-		WHERE id = $1;
-	`
-	revokeExpiredRefreshTokensQuery = `
-		UPDATE refresh_tokens
-		SET revoked = TRUE
-		WHERE expires_at < NOW() AND revoked = TRUE;
-	`
-	deleteWeekOldRefreshTokensQuery = `
+	deleteExpiredRefreshTokensQuery = `
 		DELETE FROM refresh_tokens
-		WHERE expires_at < NOW() - INTERVAL '7 days';
+		WHERE expires_at < NOW();
 	`
 	deleteRefreshTokenQuery = `
 		DELETE FROM refresh_tokens

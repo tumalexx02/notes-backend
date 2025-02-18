@@ -8,7 +8,6 @@ import (
 	"os"
 )
 
-// TODO: change revoke logic to delete refresh token
 // TODO: custom error messages (for separate feature)
 
 func main() {

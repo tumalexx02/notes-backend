@@ -36,47 +36,20 @@ func (s *Storage) GetRefreshTokenById(id string) (auth.RefreshToken, error) {
 	return refreshToken, nil
 }
 
-func (s *Storage) RevokeRefreshTokenById(id string) error {
-	const op = "storage.postgres.RevokeRefreshTokenById"
+func (s *Storage) DeleteExpiredRefreshTokens() (int, error) {
+	const op = "storage.postgres.DeleteExpiredRefreshTokens"
 
-	// revoking refresh token
-	res, err := s.db.Exec(revokeRefreshTokenByIdQuery, id)
+	// deleting expired refresh tokens
+	rows, err := s.db.Exec(deleteExpiredRefreshTokensQuery)
 	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	// check if refresh token wasn't found
-	rows, err := res.RowsAffected()
+	// counting rows
+	rowsAffected, err := rows.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-	if rows == 0 {
-		return storage.ErrRefreshTokenNotFound
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return nil
-}
-
-func (s *Storage) RevokeExpiredRefreshTokens() error {
-	const op = "storage.postgres.RevokeExpiredRefreshTokens"
-
-	// revoking expired refresh tokens
-	_, err := s.db.Exec(revokeExpiredRefreshTokensQuery)
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	return nil
-}
-
-func (s *Storage) DeleteWeekOldRefreshTokens() error {
-	const op = "storage.postgres.DeleteWeekOldRefreshTokens"
-
-	// deleting week old refresh tokens
-	_, err := s.db.Exec(deleteWeekOldRefreshTokensQuery)
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	return nil
+	return int(rowsAffected), nil
 }

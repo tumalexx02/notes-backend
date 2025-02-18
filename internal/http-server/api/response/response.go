@@ -1,9 +1,8 @@
 package response
 
 const (
-	StatusOk                  = "OK"
-	StatusError               = "ERROR"
-	StatusRevokedRefreshToken = "REVOKED_REFRESH_TOKEN"
+	StatusOk    = "OK"
+	StatusError = "ERROR"
 )
 
 type Response struct {
@@ -22,11 +21,5 @@ func Error(msg string) Response {
 	return Response{
 		Status: StatusError,
 		Error:  msg,
-	}
-}
-
-func RevokedRefreshToken() Response {
-	return Response{
-		Status: StatusRevokedRefreshToken,
 	}
 }
