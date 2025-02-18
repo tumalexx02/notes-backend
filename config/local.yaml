@@ -17,3 +17,4 @@ authorization:
   secret: "local-secret"
   access_ttl: 1m
   refresh_ttl: 168h
+  salt: "local-salt"

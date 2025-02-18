@@ -1,8 +1,6 @@
 package refresh
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"log/slog"
 	"main/internal/auth"
 	"main/internal/config"
@@ -94,9 +92,9 @@ func New(cfg *config.Config, log *slog.Logger, refreshTokener RefreshTokener, to
 			return
 		}
 
-		// TODO: add salt
-		tokenHash := sha256.Sum256([]byte(req.RefreshToken))
-		if refreshToken.TokenHash != hex.EncodeToString(tokenHash[:]) {
+		hashedRequestRefreshToken := auth.HashRefreshToken(req.RefreshToken, cfg.Authorization.Salt)
+
+		if refreshToken.TokenHash != hashedRequestRefreshToken {
 			log.Error("invalid refresh token", slog.Attr{Key: "error", Value: slog.StringValue("invalid refresh token")})
 
 			render.JSON(w, r, resp.Error("invalid refresh token"))

@@ -39,6 +39,7 @@ type Authorization struct {
 	JWTSecret  string        `mapstructure:"secret"`
 	AccessTTL  time.Duration `mapstructure:"access_ttl"`
 	RefreshTTL time.Duration `mapstructure:"refresh_ttl"`
+	Salt       string        `mapstructure:"salt"`
 }
 
 func MustLoad() *Config {

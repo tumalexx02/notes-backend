@@ -17,3 +17,4 @@ authorization:
   secret: "docker-secret"
   access_ttl: 15m
   refresh_ttl: 300h
+  salt: "docker-salt"

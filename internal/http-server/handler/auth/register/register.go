@@ -8,7 +8,6 @@ import (
 	resp "main/internal/http-server/api/response"
 	"main/internal/storage"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/jwtauth/v5"
@@ -85,10 +84,7 @@ func New(cfg *config.Config, log *slog.Logger, register Register, tokenAuth *jwt
 			return
 		}
 
-		refreshExp := time.Now().Add(cfg.Authorization.RefreshTTL)
-		accessExp := time.Now().Add(cfg.Authorization.AccessTTL)
-
-		tokens, err := auth.GenerateTokens(register, userID, refreshExp, accessExp, tokenAuth)
+		tokens, err := auth.GenerateTokens(userID, register, cfg, tokenAuth)
 		if err != nil {
 			log.Error("failed to generate tokens", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
