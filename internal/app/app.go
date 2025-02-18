@@ -27,8 +27,7 @@ func New(cfg *config.Config, log *slog.Logger) (*App, error) {
 
 	// init router and routes
 	router := router.New(cfg, log)
-	router.InitNotesRoutes(storage, log, cfg)
-	router.InitAuthRoutes(storage, log, cfg)
+	router.InitRoutes(storage, log, cfg)
 
 	return &App{
 		config:  cfg,

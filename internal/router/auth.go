@@ -7,6 +7,7 @@ import (
 	"main/internal/http-server/handler/auth/me"
 	"main/internal/http-server/handler/auth/refresh"
 	"main/internal/http-server/handler/auth/register"
+	"main/internal/http-server/middleware/authenticator"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/jwtauth/v5"
@@ -26,7 +27,7 @@ func (r *Router) InitAuthRoutes(storage Storage, logger *slog.Logger, cfg *confi
 
 		userRouter.Group(func(protected chi.Router) {
 			protected.Use(jwtauth.Verifier(r.jwtauth))
-			protected.Use(jwtauth.Authenticator(r.jwtauth))
+			protected.Use(authenticator.Authenticator(r.jwtauth, logger))
 
 			protected.Get("/me", me.New(logger, r.jwtauth))
 		})

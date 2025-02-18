@@ -1,6 +1,8 @@
 package refresh
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"log/slog"
 	"main/internal/auth"
 	"main/internal/config"
@@ -24,7 +26,7 @@ type Response struct {
 }
 
 type RefreshTokener interface {
-	GetUserByTokenId(id string) (auth.RefreshToken, error)
+	GetRefreshTokenById(id string) (auth.RefreshToken, error)
 	RevokeRefreshTokenById(id string) error
 }
 
@@ -83,11 +85,21 @@ func New(cfg *config.Config, log *slog.Logger, refreshTokener RefreshTokener, to
 			return
 		}
 
-		refreshToken, err := refreshTokener.GetUserByTokenId(tokenIdStr)
+		refreshToken, err := refreshTokener.GetRefreshTokenById(tokenIdStr)
 		if err != nil {
 			log.Error("failed to get user id", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			render.JSON(w, r, resp.Error("failed to get user id"))
+
+			return
+		}
+
+		// TODO: add salt
+		tokenHash := sha256.Sum256([]byte(req.RefreshToken))
+		if refreshToken.TokenHash != hex.EncodeToString(tokenHash[:]) {
+			log.Error("invalid refresh token", slog.Attr{Key: "error", Value: slog.StringValue("invalid refresh token")})
+
+			render.JSON(w, r, resp.Error("invalid refresh token"))
 
 			return
 		}

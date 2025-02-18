@@ -8,11 +8,15 @@ import (
 	"os"
 )
 
+// TODO: add to auth handlers refactored code
+// TODO: change revoke logic to delete refresh token
+// TODO: custom error messages (for separate feature)
+
 func main() {
 	// config init
 	cfg := config.MustLoad()
 
-	// logger init
+	// logger init``
 	log := logger.New(cfg)
 
 	// app init

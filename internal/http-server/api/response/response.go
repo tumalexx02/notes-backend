@@ -3,8 +3,6 @@ package response
 const (
 	StatusOk                  = "OK"
 	StatusError               = "ERROR"
-	StatusUnauthorized        = "UNAUTHORIZED"
-	StatusExpiredAccessToken  = "REVOKED_ACCESS_TOKEN"
 	StatusRevokedRefreshToken = "REVOKED_REFRESH_TOKEN"
 )
 
@@ -24,19 +22,6 @@ func Error(msg string) Response {
 	return Response{
 		Status: StatusError,
 		Error:  msg,
-	}
-}
-
-func Unauthorized(msg string) Response {
-	return Response{
-		Status: StatusUnauthorized,
-		Error:  msg,
-	}
-}
-
-func ExpiredAccessToken() Response {
-	return Response{
-		Status: StatusExpiredAccessToken,
 	}
 }
 

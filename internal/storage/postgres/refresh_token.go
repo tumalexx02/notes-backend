@@ -20,8 +20,8 @@ func (s *Storage) CreateRefreshToken(id, userId, tokenHash string, expiresAt tim
 	return nil
 }
 
-func (s *Storage) GetUserByTokenId(id string) (auth.RefreshToken, error) {
-	const op = "storage.postgres.GetRefreshToken"
+func (s *Storage) GetRefreshTokenById(id string) (auth.RefreshToken, error) {
+	const op = "storage.postgres.GetRefreshTokenById"
 
 	var refreshToken auth.RefreshToken
 

@@ -15,5 +15,5 @@ http_server:
   idle_timeout: 10s
 authorization:
   secret: "local-secret"
-  access_ttl: 168h
+  access_ttl: 1m
   refresh_ttl: 168h

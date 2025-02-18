@@ -27,8 +27,6 @@ type RefreshTokenCreator interface {
 	CreateRefreshToken(id, userId, tokenHash string, expiresAt time.Time) error
 }
 
-// TODO: make Autorizer entity
-
 func GenerateTokens(refreshTokenCreator RefreshTokenCreator, userId string, refreshExpiresAt time.Time, accessExpiresAt time.Time, tokenAuth *jwtauth.JWTAuth) (Tokens, error) {
 	const op = "auth.GenerateTokens"
 
@@ -42,6 +40,7 @@ func GenerateTokens(refreshTokenCreator RefreshTokenCreator, userId string, refr
 		return Tokens{}, fmt.Errorf("%s: %w", op, err)
 	}
 
+	// TODO: add salt
 	hashedRefreshToken := sha256.Sum256([]byte(refreshToken))
 
 	err = refreshTokenCreator.CreateRefreshToken(id, userId, hex.EncodeToString(hashedRefreshToken[:]), refreshExpiresAt)
