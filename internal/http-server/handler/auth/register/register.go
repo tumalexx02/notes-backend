@@ -6,6 +6,7 @@ import (
 	"main/internal/auth"
 	"main/internal/config"
 	resp "main/internal/http-server/api/response"
+	resperrors "main/internal/http-server/api/response-errors"
 	"main/internal/http-server/api/validate"
 	"main/internal/storage"
 	"net/http"
@@ -51,7 +52,8 @@ func New(cfg *config.Config, log *slog.Logger, register Register, tokenAuth *jwt
 		if err != nil {
 			log.Error("failed to hash password", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to hash password"))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
 
 			return
 		}
@@ -60,14 +62,15 @@ func New(cfg *config.Config, log *slog.Logger, register Register, tokenAuth *jwt
 		if errors.Is(err, storage.ErrUserAlreadyExists) {
 			log.Error("user already exists", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error(err.Error()))
+			render.JSON(w, r, resp.Error(resperrors.ErrUserIsAlreadyExists))
 
 			return
 		}
 		if err != nil {
 			log.Error("failed to create user", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to create user"))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
 
 			return
 		}
@@ -76,7 +79,8 @@ func New(cfg *config.Config, log *slog.Logger, register Register, tokenAuth *jwt
 		if err != nil {
 			log.Error("failed to generate tokens", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to generate tokens"))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
 
 			return
 		}

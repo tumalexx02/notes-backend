@@ -1,8 +1,11 @@
 package postgres
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"main/internal/models/note"
+	"main/internal/storage"
 )
 
 func (s *Storage) AddNoteNode(noteId int, contentType string, content string) (int, error) {
@@ -85,6 +88,10 @@ func (s *Storage) UpdateNoteNodeContent(id int, content string) error {
 	var noteId int
 
 	err := tx.Get(&noteId, updateNoteNodeContentQuery, id, content)
+	if errors.Is(err, sql.ErrNoRows) {
+		_ = tx.Rollback()
+		return storage.ErrNoteNodeNotFound
+	}
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("%s: %w", op, err)

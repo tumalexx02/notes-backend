@@ -3,6 +3,7 @@ package add
 import (
 	"log/slog"
 	resp "main/internal/http-server/api/response"
+	resperrors "main/internal/http-server/api/response-errors"
 	"main/internal/http-server/api/validate"
 	"net/http"
 
@@ -54,7 +55,8 @@ func New(log *slog.Logger, noteAdder NodeAdder) http.HandlerFunc {
 		if err != nil {
 			log.Error("failed to add note node", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to add note node"))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrFailedToAddNoteNode))
 
 			return
 		}

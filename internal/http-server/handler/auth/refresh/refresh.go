@@ -5,6 +5,7 @@ import (
 	"main/internal/auth"
 	"main/internal/config"
 	resp "main/internal/http-server/api/response"
+	resperrors "main/internal/http-server/api/response-errors"
 	"main/internal/http-server/api/validate"
 	"net/http"
 	"time"
@@ -46,7 +47,8 @@ func New(cfg *config.Config, log *slog.Logger, refreshTokener RefreshTokener, to
 		if err != nil {
 			log.Error("failed to decode token", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to decode token"))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
 
 			return
 		}
@@ -55,7 +57,8 @@ func New(cfg *config.Config, log *slog.Logger, refreshTokener RefreshTokener, to
 		if !ok {
 			log.Error("failed to get token id", slog.Attr{Key: "error", Value: slog.StringValue("failed to get token id")})
 
-			render.JSON(w, r, resp.Error("failed to get token id"))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
 
 			return
 		}
@@ -64,7 +67,8 @@ func New(cfg *config.Config, log *slog.Logger, refreshTokener RefreshTokener, to
 		if !ok {
 			log.Error("failed to convert token id into string", slog.Attr{Key: "error", Value: slog.StringValue("failed to convert token id into string")})
 
-			render.JSON(w, r, resp.Error("failed to convert token id into string"))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
 
 			return
 		}
@@ -73,7 +77,8 @@ func New(cfg *config.Config, log *slog.Logger, refreshTokener RefreshTokener, to
 		if err != nil {
 			log.Error("failed to get user id", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to get user id"))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
 
 			return
 		}
@@ -82,14 +87,16 @@ func New(cfg *config.Config, log *slog.Logger, refreshTokener RefreshTokener, to
 		if refreshToken.ExpiresAt.Before(time.Now()) {
 			log.Error("token expired", slog.Attr{Key: "error", Value: slog.StringValue("token expired")})
 
-			render.JSON(w, r, resp.Error("token expired or invalid"))
+			w.WriteHeader(http.StatusUnauthorized)
+			render.JSON(w, r, resp.Error(resperrors.ErrRefreshTokenExpired))
 
 			return
 		}
 		if refreshToken.TokenHash != hashedRequestRefreshToken {
 			log.Error("invalid refresh token", slog.Attr{Key: "error", Value: slog.StringValue("invalid refresh token")})
 
-			render.JSON(w, r, resp.Error("invalid refresh token"))
+			w.WriteHeader(http.StatusUnauthorized)
+			render.JSON(w, r, resp.Error(resperrors.ErrInvalidRefreshToken))
 
 			return
 		}
@@ -103,7 +110,8 @@ func New(cfg *config.Config, log *slog.Logger, refreshTokener RefreshTokener, to
 		if err != nil {
 			log.Error("failed to encode access token", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to encode access token"))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
 
 			return
 		}

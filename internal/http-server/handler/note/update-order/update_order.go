@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	resp "main/internal/http-server/api/response"
+	resperrors "main/internal/http-server/api/response-errors"
 	"main/internal/http-server/api/validate"
 	"main/internal/storage"
 	"net/http"
@@ -50,14 +51,16 @@ func New(log *slog.Logger, noteUpdater NoteOrderUpdater) http.HandlerFunc {
 		if errors.Is(err, storage.ErrNoteNodeNotFound) {
 			log.Error("note node not found", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error(err.Error()))
+			w.WriteHeader(http.StatusNotFound)
+			render.JSON(w, r, resp.Error(resperrors.ErrNodeDoesNotExist))
 
 			return
 		}
 		if err != nil {
 			log.Error("failed to update note node order", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to update note node order"))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrFailedToUpdateNodesOrder))
 
 			return
 		}

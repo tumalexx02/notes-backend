@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	resp "main/internal/http-server/api/response"
+	resperrors "main/internal/http-server/api/response-errors"
 	"net/http"
 
 	"github.com/go-chi/jwtauth/v5"
@@ -28,9 +29,9 @@ func Authenticator(ja *jwtauth.JWTAuth, log *slog.Logger) func(http.Handler) htt
 				w.WriteHeader(http.StatusUnauthorized)
 
 				if errors.Is(err, jwtauth.ErrExpired) {
-					render.JSON(w, r, resp.Error("token expired"))
+					render.JSON(w, r, resp.Error(resperrors.ErrAccessTokenExpired))
 				} else {
-					render.JSON(w, r, resp.Error("invalid token"))
+					render.JSON(w, r, resp.Error(resperrors.ErrInvalidAccessToken))
 				}
 
 				return
@@ -40,7 +41,7 @@ func Authenticator(ja *jwtauth.JWTAuth, log *slog.Logger) func(http.Handler) htt
 				log.Error("token not found")
 
 				w.WriteHeader(http.StatusUnauthorized)
-				render.JSON(w, r, resp.Error("invalid token"))
+				render.JSON(w, r, resp.Error(resperrors.ErrInvalidAccessToken))
 
 				return
 			}

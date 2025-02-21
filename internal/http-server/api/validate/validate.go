@@ -25,7 +25,8 @@ func DecodeRequestJson[T any](dest *T, w http.ResponseWriter, r *http.Request, l
 	if err := render.DecodeJSON(r.Body, dest); err != nil {
 		log.Error("failed to decode request body", "error", err)
 
-		render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
 
 		return err
 	}
@@ -43,7 +44,8 @@ func DecodeAndValidateRequestJson[T any](dest *T, w http.ResponseWriter, r *http
 	if err := val.RegisterValidation("custom_url", categoryValidator); err != nil {
 		log.Error("validator init error", "error", err)
 
-		render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
 
 		return err
 	}
@@ -51,7 +53,8 @@ func DecodeAndValidateRequestJson[T any](dest *T, w http.ResponseWriter, r *http
 	if err := val.Struct(*dest); err != nil {
 		log.Error("invalid request body", "error", err)
 
-		render.JSON(w, r, resp.Error(resperrors.ErrInvalidRequestBody.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, resp.Error(resperrors.ErrInvalidRequestBody))
 
 		return err
 	}
@@ -68,7 +71,8 @@ func GetIntURLParam(paramName string, w http.ResponseWriter, r *http.Request, lo
 
 		log.Error(paramError.Error(), "error", err)
 
-		render.JSON(w, r, resp.Error(paramError.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, resp.Error(paramError))
 
 		return 0, err
 	}
@@ -85,7 +89,8 @@ func VerifyUserNote(id int, userVerifier UserVerifier, w http.ResponseWriter, r 
 	if err != nil {
 		log.Error("failed to check note owner", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-		render.JSON(w, r, resp.Error("failed to check note owner"))
+		w.WriteHeader(http.StatusInternalServerError)
+		render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
 
 		return err
 	}
@@ -93,7 +98,8 @@ func VerifyUserNote(id int, userVerifier UserVerifier, w http.ResponseWriter, r 
 	if !isOwner {
 		log.Error("user is not note owner", "error", resperrors.ErrUserNotOwner, "user_id", userId, "note_id", id)
 
-		render.JSON(w, r, resp.Error(resperrors.ErrUserNotOwner.Error()))
+		w.WriteHeader(http.StatusUnauthorized)
+		render.JSON(w, r, resp.Error(resperrors.ErrUserNotOwner))
 
 		return resperrors.ErrUserNotOwner
 	}
@@ -110,7 +116,8 @@ func VerifyUserNoteNode(id int, userVerifier UserVerifier, w http.ResponseWriter
 	if err != nil {
 		log.Error("failed to check note node owner", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-		render.JSON(w, r, resp.Error("failed to check note node owner"))
+		w.WriteHeader(http.StatusInternalServerError)
+		render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
 
 		return err
 	}
@@ -118,7 +125,8 @@ func VerifyUserNoteNode(id int, userVerifier UserVerifier, w http.ResponseWriter
 	if !isOwner {
 		log.Error("user is not note node owner", "error", resperrors.ErrUserNotOwner, "user_id", userId, "note_node_id", id)
 
-		render.JSON(w, r, resp.Error(resperrors.ErrUserNotOwner.Error()))
+		w.WriteHeader(http.StatusUnauthorized)
+		render.JSON(w, r, resp.Error(resperrors.ErrUserNotOwner))
 
 		return resperrors.ErrUserNotOwner
 	}
