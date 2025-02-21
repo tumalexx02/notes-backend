@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	resp "main/internal/http-server/api/response"
+	resperrors "main/internal/http-server/api/response-errors"
 	"main/internal/http-server/api/validate"
 	"main/internal/storage"
 	"net/http"
@@ -40,14 +41,16 @@ func New(log *slog.Logger, nodeDeleter NodeDeleter) http.HandlerFunc {
 		if errors.Is(err, storage.ErrNoteNodeNotFound) {
 			log.Error("not found note node", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error(err.Error()))
+			w.WriteHeader(http.StatusNotFound)
+			render.JSON(w, r, resp.Error(resperrors.ErrNodeDoesNotExist))
 
 			return
 		}
 		if err != nil {
 			log.Error("failed to delete note node", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to delete note node"))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrFailedToDeleteNode))
 
 			return
 		}

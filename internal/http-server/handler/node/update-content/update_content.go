@@ -1,9 +1,12 @@
 package updatecontent
 
 import (
+	"errors"
 	"log/slog"
 	resp "main/internal/http-server/api/response"
+	resperrors "main/internal/http-server/api/response-errors"
 	"main/internal/http-server/api/validate"
+	"main/internal/storage"
 	"net/http"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -43,10 +46,20 @@ func New(log *slog.Logger, nodeUpdater NodeUpdater) http.HandlerFunc {
 			return
 		}
 
-		if err := nodeUpdater.UpdateNoteNodeContent(nodeId, req.Content); err != nil {
+		err = nodeUpdater.UpdateNoteNodeContent(nodeId, req.Content)
+		if errors.Is(err, storage.ErrNoteNodeNotFound) {
+			log.Error("note node not found", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+
+			w.WriteHeader(http.StatusNotFound)
+			render.JSON(w, r, resp.Error(resperrors.ErrNodeDoesNotExist))
+
+			return
+		}
+		if err != nil {
 			log.Error("failed to update note node content", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to update note node content"))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
 
 			return
 		}

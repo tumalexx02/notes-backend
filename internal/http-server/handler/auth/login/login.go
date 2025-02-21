@@ -6,6 +6,7 @@ import (
 	"main/internal/auth"
 	"main/internal/config"
 	resp "main/internal/http-server/api/response"
+	resperrors "main/internal/http-server/api/response-errors"
 	"main/internal/http-server/api/validate"
 	"main/internal/models/user"
 	"main/internal/storage"
@@ -51,14 +52,16 @@ func New(cfg *config.Config, log *slog.Logger, loginer Loginer, tokenAuth *jwtau
 		if errors.Is(err, storage.ErrUserNotFound) {
 			log.Error("user not found", slog.Attr{Key: "email", Value: slog.StringValue(req.Email)})
 
-			render.JSON(w, r, resp.Error(err.Error()))
+			w.WriteHeader(http.StatusNotFound)
+			render.JSON(w, r, resp.Error(resperrors.ErrUserDoesNotExist))
 
 			return
 		}
 		if err != nil {
 			log.Error("failed to get user", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to get user"))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
 
 			return
 		}
@@ -66,7 +69,8 @@ func New(cfg *config.Config, log *slog.Logger, loginer Loginer, tokenAuth *jwtau
 		if !checkPassword(req.Password, userFromDb.PasswordHash) {
 			log.Error("invalid password", slog.Attr{Key: "email", Value: slog.StringValue(req.Email)})
 
-			render.JSON(w, r, resp.Error("invalid password"))
+			w.WriteHeader(http.StatusUnauthorized)
+			render.JSON(w, r, resp.Error(resperrors.ErrInvalidPassword))
 
 			return
 		}
@@ -75,7 +79,8 @@ func New(cfg *config.Config, log *slog.Logger, loginer Loginer, tokenAuth *jwtau
 		if err != nil {
 			log.Error("failed to generate tokens", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to generate tokens"))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
 
 			return
 		}
