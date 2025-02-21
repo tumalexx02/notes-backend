@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	resp "main/internal/http-server/api/response"
+	resperrors "main/internal/http-server/api/response-errors"
 	"main/internal/http-server/api/validate"
 	"main/internal/storage"
 	"net/http"
@@ -40,14 +41,16 @@ func New(log *slog.Logger, noteArchiver NoteArchiver) http.HandlerFunc {
 		if errors.Is(err, storage.ErrNoteNotFound) {
 			log.Error("note not found", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error(err.Error()))
+			w.WriteHeader(http.StatusNotFound)
+			render.JSON(w, r, resp.Error(resperrors.ErrNoteDoesNotExist))
 
 			return
 		}
 		if err != nil {
 			log.Error("failed to archive note", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to archive note"))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrFailedToArchiveNote))
 
 			return
 		}

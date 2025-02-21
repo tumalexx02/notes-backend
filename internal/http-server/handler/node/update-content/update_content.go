@@ -59,7 +59,7 @@ func New(log *slog.Logger, nodeUpdater NodeUpdater) http.HandlerFunc {
 			log.Error("failed to update note node content", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
 			w.WriteHeader(http.StatusInternalServerError)
-			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
+			render.JSON(w, r, resp.Error(resperrors.ErrFailedToUpdateNodeContent))
 
 			return
 		}

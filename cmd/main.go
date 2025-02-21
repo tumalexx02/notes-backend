@@ -8,8 +8,6 @@ import (
 	"os"
 )
 
-// TODO: custom error messages (for separate feature)
-
 func main() {
 	// config init
 	cfg := config.MustLoad()

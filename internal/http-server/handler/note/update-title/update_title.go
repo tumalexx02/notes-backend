@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	resp "main/internal/http-server/api/response"
+	resperrors "main/internal/http-server/api/response-errors"
 	"main/internal/http-server/api/validate"
 	"main/internal/storage"
 	"net/http"
@@ -51,14 +52,14 @@ func New(log *slog.Logger, noteTitleUpdater NoteTitleUpdater) http.HandlerFunc {
 		if errors.Is(err, storage.ErrNoteNotFound) {
 			log.Error("note not found", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error(err.Error()))
+			render.JSON(w, r, resp.Error(resperrors.ErrNoteDoesNotExist))
 
 			return
 		}
 		if err != nil {
 			log.Error("failed to update note title", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to update note title"))
+			render.JSON(w, r, resp.Error(resperrors.ErrFailedToUpdateNoteTitle))
 
 			return
 		}

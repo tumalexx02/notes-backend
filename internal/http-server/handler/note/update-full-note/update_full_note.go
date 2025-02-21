@@ -3,6 +3,7 @@ package updatefullnote
 import (
 	"log/slog"
 	resp "main/internal/http-server/api/response"
+	resperrors "main/internal/http-server/api/response-errors"
 	"main/internal/http-server/api/validate"
 	"main/internal/models/note"
 	"net/http"
@@ -48,7 +49,8 @@ func New(log *slog.Logger, noteUpdater NoteFUllUpdater) http.HandlerFunc {
 		if err != nil {
 			log.Error("failed to update note", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
-			render.JSON(w, r, resp.Error("failed to update note"))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrFailedToUpdateFullNote))
 
 			return
 		}
