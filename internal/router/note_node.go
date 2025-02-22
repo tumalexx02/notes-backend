@@ -6,6 +6,7 @@ import (
 	"main/internal/http-server/handler/node/add"
 	deleteNode "main/internal/http-server/handler/node/delete"
 	updatecontent "main/internal/http-server/handler/node/update-content"
+	uploadimage "main/internal/http-server/handler/node/upload-image"
 	"main/internal/http-server/middleware/authenticator"
 
 	"github.com/go-chi/chi"
@@ -16,6 +17,7 @@ type NoteNoder interface {
 	add.NodeAdder
 	deleteNode.NodeDeleter
 	updatecontent.NodeUpdater
+	uploadimage.ImageUploader
 }
 
 func (r *Router) InitNoteNodesRoutes(storage Storage, logger *slog.Logger, cfg *config.Config) {
@@ -29,6 +31,7 @@ func (r *Router) InitNoteNodesRoutes(storage Storage, logger *slog.Logger, cfg *
 
 		// update
 		nodeRouter.Patch("/{id}", updatecontent.New(logger, storage))
+		nodeRouter.Patch("/{id}/image", uploadimage.New(cfg, logger, storage))
 
 		// delete
 		nodeRouter.Delete("/{id}", deleteNode.New(logger, storage))

@@ -124,3 +124,20 @@ func (s *Storage) IsUserNoteNodeOwner(userId string, noteNodeId int) (bool, erro
 
 	return exists == 1, nil
 }
+
+func (s *Storage) GetNoteIdByNoteNodeId(id int) (int, error) {
+	const op = "storage.postgres.GetNoteIdByNoteNodeId"
+
+	// getting note id by note node id
+	var nodeId int
+
+	err := s.db.Get(&nodeId, getNoteIdByNoteNodeIdQuery, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nodeId, storage.ErrNoteNodeNotFound
+	}
+	if err != nil {
+		return nodeId, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nodeId, nil
+}

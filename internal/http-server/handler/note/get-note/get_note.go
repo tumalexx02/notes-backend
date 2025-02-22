@@ -38,6 +38,8 @@ func New(log *slog.Logger, noteGetter NoteGetter) http.HandlerFunc {
 			return
 		}
 
+		// TODO: separate get note and get nodes inside
+		// TODO: on getting nodes add image node logic
 		note, err := noteGetter.GetNoteById(id)
 		if errors.Is(err, storage.ErrNoteNotFound) {
 			log.Error("note not found", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})

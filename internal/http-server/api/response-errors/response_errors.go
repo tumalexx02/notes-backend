@@ -24,6 +24,8 @@ var (
 	ErrFailedToDeleteNode        = errors.New("failed to delete node")
 	ErrFailedToUpdateNodeContent = errors.New("failed to update node content")
 	ErrNodeDoesNotExist          = errors.New("node does not exist")
+	ErrInvalidImageFormat        = errors.New("invalid image format")
+	ErrInvalidNoteId             = errors.New("invalid note id")
 
 	ErrNoteDoesNotExist         = errors.New("note does not exist")
 	ErrNoteIsAlreadyExists      = errors.New("note is already exists")

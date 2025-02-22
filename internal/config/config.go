@@ -17,6 +17,7 @@ type Config struct {
 	Postgres       `mapstructure:"postgres"`
 	HTTPServer     `mapstructure:"http_server"`
 	Authorization  `mapstructure:"authorization"`
+	Image          `mapstructure:"image"`
 }
 
 type Postgres struct {
@@ -40,6 +41,11 @@ type Authorization struct {
 	AccessTTL  time.Duration `mapstructure:"access_ttl"`
 	RefreshTTL time.Duration `mapstructure:"refresh_ttl"`
 	Salt       string        `mapstructure:"salt"`
+}
+
+type Image struct {
+	ImagesDir string `mapstructure:"images_dir"`
+	ImageSalt string `mapstructure:"image_salt"`
 }
 
 func MustLoad() *Config {
