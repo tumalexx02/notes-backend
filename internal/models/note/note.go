@@ -4,12 +4,11 @@ import (
 	"time"
 )
 
-type ContentType = string
+type ContentType string
 
 const (
 	ContentTypeText  = "text"
 	ContentTypeImage = "image"
-	ContentTypeList  = "list"
 )
 
 type Note struct {

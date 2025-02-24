@@ -137,7 +137,7 @@ func VerifyUserNoteNode(id int, userVerifier UserVerifier, w http.ResponseWriter
 func categoryValidator(fl validator.FieldLevel) bool {
 	category := fl.Field().String()
 	switch category {
-	case note.ContentTypeImage, note.ContentTypeText, note.ContentTypeList:
+	case note.ContentTypeImage, note.ContentTypeText:
 		return true
 	default:
 		return false
