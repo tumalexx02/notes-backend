@@ -14,6 +14,7 @@ import (
 	resp "main/internal/http-server/api/response"
 	resperrors "main/internal/http-server/api/response-errors"
 	"main/internal/http-server/api/validate"
+	"main/internal/models/note"
 	"main/internal/storage"
 	"mime/multipart"
 	"net/http"
@@ -21,14 +22,15 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
+	"github.com/nfnt/resize"
 )
 
 type ImageUploader interface {
 	UpdateNoteNodeContent(id int, content string) error
-	GetNoteIdByNoteNodeId(id int) (int, error)
+	GetNodeById(id int) (note.NoteNode, error)
 	validate.UserVerifier
 }
 
@@ -51,8 +53,7 @@ func New(cfg *config.Config, log *slog.Logger, imageUploader ImageUploader) http
 			return
 		}
 
-		// TODO: add node type check
-		noteId, err := imageUploader.GetNoteIdByNoteNodeId(id)
+		noteFromDB, err := imageUploader.GetNodeById(id)
 		if errors.Is(err, storage.ErrNoteNodeNotFound) {
 			log.Error("note node not found", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 
@@ -66,6 +67,15 @@ func New(cfg *config.Config, log *slog.Logger, imageUploader ImageUploader) http
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
+
+			return
+		}
+
+		if noteFromDB.ContentType != note.ContentTypeImage {
+			log.Info("invalid content type", slog.Any("content-type", noteFromDB.ContentType))
+
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, resp.Error(resperrors.ErrInvalidContentType))
 
 			return
 		}
@@ -109,8 +119,17 @@ func New(cfg *config.Config, log *slog.Logger, imageUploader ImageUploader) http
 
 		fileId := uuid.New().String()
 		fileName := fileId + exp
-		dirName := filepath.Join(cfg.Image.ImagesDir, HashNoteId(noteId, cfg.Image.ImageSalt))
+		dirName := filepath.Join(cfg.Image.ImagesDir, HashNoteId(noteFromDB.NoteId, cfg.Image.ImageSalt), strconv.Itoa(noteFromDB.Id))
 		imagePath := filepath.Join(dirName, fileName)
+
+		if err := os.RemoveAll(dirName); err != nil {
+			log.Error("failed to remove existing directory", slog.String("error", err.Error()))
+
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, response.Error(resperrors.ErrInternalServerError))
+
+			return
+		}
 
 		if err := os.MkdirAll(dirName, os.ModePerm); err != nil {
 			log.Error("failed to create image dir", slog.String("error", err.Error()))
@@ -130,7 +149,7 @@ func New(cfg *config.Config, log *slog.Logger, imageUploader ImageUploader) http
 		}
 		defer outFile.Close()
 
-		err = compressImage(imageFile, imageType, outFile.Name())
+		err = compressImage(imageFile, imageType, outFile.Name(), cfg.Image.MaxWidth)
 		if err != nil {
 			log.Error("failed to compress image", slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -146,7 +165,27 @@ func New(cfg *config.Config, log *slog.Logger, imageUploader ImageUploader) http
 			return
 		}
 
-		render.JSON(w, r, resp.OK())
+		file, err := os.Open(imagePath)
+		if err != nil {
+			log.Error("failed to open image file", slog.String("error", err.Error()))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, response.Error(resperrors.ErrInternalServerError))
+			return
+		}
+		defer file.Close()
+
+		fileInfo, err := file.Stat()
+		if err != nil {
+			log.Error("failed to get file info", slog.String("error", err.Error()))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, response.Error(resperrors.ErrInternalServerError))
+			return
+		}
+
+		w.Header().Set("Content-Disposition", "inline; filename="+fileName)
+		w.Header().Set("Content-Type", "image/"+imageType)
+
+		http.ServeContent(w, r, fileName, fileInfo.ModTime(), file)
 	}
 }
 
@@ -156,11 +195,14 @@ func HashNoteId(noteId int, salt string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func compressImage(file multipart.File, format string, savePath string) error {
+func compressImage(file multipart.File, format string, savePath string, maxWidth uint) error {
 	img, _, err := image.Decode(file)
 	if err != nil {
 		return err
 	}
+
+	// Масштабирование изображения до maxWidth
+	resizedImg := resize.Resize(maxWidth, 0, img, resize.Lanczos3)
 
 	outFile, err := os.Create(savePath)
 	if err != nil {
@@ -169,9 +211,9 @@ func compressImage(file multipart.File, format string, savePath string) error {
 	defer outFile.Close()
 
 	if format == "image/jpeg" {
-		return jpeg.Encode(outFile, img, &jpeg.Options{Quality: 60})
+		return jpeg.Encode(outFile, resizedImg, &jpeg.Options{Quality: 60})
 	} else if format == "image/png" {
-		return png.Encode(outFile, img)
+		return png.Encode(outFile, resizedImg)
 	}
 	return nil
 }

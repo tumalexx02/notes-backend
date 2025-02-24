@@ -46,6 +46,7 @@ type Authorization struct {
 type Image struct {
 	ImagesDir string `mapstructure:"images_dir"`
 	ImageSalt string `mapstructure:"image_salt"`
+	MaxWidth  uint   `mapstructure:"max_width"`
 }
 
 func MustLoad() *Config {

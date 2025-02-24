@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-type ContentType string
+type ContentType = string
 
 const (
 	ContentTypeText  = "text"

@@ -53,7 +53,7 @@ const (
     WHERE id = $2 AND (note_id IN (SELECT id FROM notes WHERE user_id = $1));
 	`
 	getNoteIdByNoteNodeIdQuery = `
-		SELECT note_id FROM note_nodes
+		SELECT * FROM note_nodes
 		WHERE id = $1;
 	`
 )

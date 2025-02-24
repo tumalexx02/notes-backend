@@ -26,6 +26,7 @@ var (
 	ErrNodeDoesNotExist          = errors.New("node does not exist")
 	ErrInvalidImageFormat        = errors.New("invalid image format")
 	ErrInvalidNoteId             = errors.New("invalid note id")
+	ErrInvalidContentType        = errors.New("invalid content type")
 
 	ErrNoteDoesNotExist         = errors.New("note does not exist")
 	ErrNoteIsAlreadyExists      = errors.New("note is already exists")

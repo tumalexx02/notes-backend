@@ -15,9 +15,10 @@ http_server:
   idle_timeout: 10s
 authorization:
   secret: "local-secret"
-  access_ttl: 1m
+  access_ttl: 168h
   refresh_ttl: 168h
   salt: "local-salt"
 image:
   images_dir: "./uploads"
   image_salt: "local-image-salt"
+  max_width: 768
