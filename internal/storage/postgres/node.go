@@ -141,3 +141,19 @@ func (s *Storage) GetNodeById(id int) (note.NoteNode, error) {
 
 	return node, nil
 }
+
+func (s *Storage) GetAllNotesNodes(noteId int) ([]note.NoteNode, error) {
+	const op = "storage.postgres.GetAllNotesNodes"
+
+	var nodes []note.NoteNode
+
+	err := s.db.Select(&nodes, getAllNotesNodesQuery, noteId)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nodes, storage.ErrNoteNotFound
+	}
+	if err != nil {
+		return nodes, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nodes, nil
+}

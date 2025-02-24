@@ -49,7 +49,7 @@ func New(log *slog.Logger, noteUpdater NoteOrderUpdater) http.HandlerFunc {
 
 		err = noteUpdater.UpdateNoteNodeOrder(id, req.OldOrder, req.NewOrder)
 		if errors.Is(err, storage.ErrNoteNodeNotFound) {
-			log.Error("note node not found", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("note node not found", "error", err)
 
 			w.WriteHeader(http.StatusNotFound)
 			render.JSON(w, r, resp.Error(resperrors.ErrNodeDoesNotExist))
@@ -57,7 +57,7 @@ func New(log *slog.Logger, noteUpdater NoteOrderUpdater) http.HandlerFunc {
 			return
 		}
 		if err != nil {
-			log.Error("failed to update note node order", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to update note node order", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrFailedToUpdateNodesOrder))

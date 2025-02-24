@@ -37,7 +37,7 @@ func New(log *slog.Logger, notesGetter NotesGetter) http.HandlerFunc {
 
 		notes, err := notesGetter.GetUserNotes(userId)
 		if err != nil && !errors.Is(err, storage.ErrNoteNotFound) {
-			log.Error("failed to get notes", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to get notes", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrFailedToGetUsersNote))

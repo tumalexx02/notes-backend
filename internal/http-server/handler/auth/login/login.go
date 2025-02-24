@@ -58,7 +58,7 @@ func New(cfg *config.Config, log *slog.Logger, loginer Loginer, tokenAuth *jwtau
 			return
 		}
 		if err != nil {
-			log.Error("failed to get user", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to get user", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
@@ -77,7 +77,7 @@ func New(cfg *config.Config, log *slog.Logger, loginer Loginer, tokenAuth *jwtau
 
 		tokens, err := auth.GenerateTokens(userFromDb.ID, loginer, cfg, tokenAuth)
 		if err != nil {
-			log.Error("failed to generate tokens", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to generate tokens", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))

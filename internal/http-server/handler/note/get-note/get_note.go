@@ -21,6 +21,7 @@ type Response struct {
 
 type NoteGetter interface {
 	GetNoteById(id int) (note.Note, error)
+	GetAllNotesNodes(noteId int) ([]note.NoteNode, error)
 	validate.UserVerifier
 }
 
@@ -38,11 +39,9 @@ func New(log *slog.Logger, noteGetter NoteGetter) http.HandlerFunc {
 			return
 		}
 
-		// TODO: separate get note and get nodes inside
-		// TODO: on getting nodes add image node logic
-		note, err := noteGetter.GetNoteById(id)
+		noteFromDB, err := noteGetter.GetNoteById(id)
 		if errors.Is(err, storage.ErrNoteNotFound) {
-			log.Error("note not found", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("note not found", "error", err)
 
 			w.WriteHeader(http.StatusNotFound)
 			render.JSON(w, r, resp.Error(resperrors.ErrNoteDoesNotExist))
@@ -50,7 +49,7 @@ func New(log *slog.Logger, noteGetter NoteGetter) http.HandlerFunc {
 			return
 		}
 		if err != nil {
-			log.Error("failed to get note", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to get note", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrFailedToGetNote))
@@ -58,13 +57,36 @@ func New(log *slog.Logger, noteGetter NoteGetter) http.HandlerFunc {
 			return
 		}
 
-		err = validate.VerifyUserNote(note.Id, noteGetter, w, r, log)
+		err = validate.VerifyUserNote(noteFromDB.Id, noteGetter, w, r, log)
 		if err != nil {
 			return
 		}
 
-		log.Info("note got", slog.Int("id", note.Id))
+		nodes, err := noteGetter.GetAllNotesNodes(noteFromDB.Id)
+		if errors.Is(err, storage.ErrNoteNodeNotFound) {
+			log.Error("note nodes not found", "error", err)
 
-		render.JSON(w, r, Response{resp.OK(), note})
+			nodes = []note.NoteNode{}
+		}
+		if err != nil {
+			log.Error("failed to get note nodes", "error", err)
+
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrFailedToGetNoteNodes))
+
+			return
+		}
+
+		for i, n := range nodes {
+			if n.ContentType == note.ContentTypeImage {
+				nodes[i].Content = ""
+			}
+		}
+
+		noteFromDB.Nodes = nodes
+
+		log.Info("note got", slog.Int("id", noteFromDB.Id))
+
+		render.JSON(w, r, Response{resp.OK(), noteFromDB})
 	}
 }

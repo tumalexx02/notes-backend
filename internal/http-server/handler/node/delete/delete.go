@@ -39,7 +39,7 @@ func New(log *slog.Logger, nodeDeleter NodeDeleter) http.HandlerFunc {
 
 		err = nodeDeleter.DeleteNoteNode(id)
 		if errors.Is(err, storage.ErrNoteNodeNotFound) {
-			log.Error("not found note node", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("not found note node", "error", err)
 
 			w.WriteHeader(http.StatusNotFound)
 			render.JSON(w, r, resp.Error(resperrors.ErrNodeDoesNotExist))
@@ -47,7 +47,7 @@ func New(log *slog.Logger, nodeDeleter NodeDeleter) http.HandlerFunc {
 			return
 		}
 		if err != nil {
-			log.Error("failed to delete note node", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to delete note node", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrFailedToDeleteNode))

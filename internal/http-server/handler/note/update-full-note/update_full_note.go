@@ -47,7 +47,7 @@ func New(log *slog.Logger, noteUpdater NoteFUllUpdater) http.HandlerFunc {
 
 		rows, err := noteUpdater.UpdateFullNote(id, req.Note)
 		if err != nil {
-			log.Error("failed to update note", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to update note", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrFailedToUpdateFullNote))

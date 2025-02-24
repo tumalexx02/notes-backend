@@ -47,7 +47,7 @@ func New(log *slog.Logger, noteCreator NoteCreator) http.HandlerFunc {
 
 		id, err := noteCreator.CreateNote(title, userId)
 		if err != nil {
-			log.Error("failed to create note", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to create note", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrFailedToCreateNote))

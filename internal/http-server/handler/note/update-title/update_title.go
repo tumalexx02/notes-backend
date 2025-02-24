@@ -50,14 +50,14 @@ func New(log *slog.Logger, noteTitleUpdater NoteTitleUpdater) http.HandlerFunc {
 
 		err = noteTitleUpdater.UpdateNoteTitle(id, title)
 		if errors.Is(err, storage.ErrNoteNotFound) {
-			log.Error("note not found", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("note not found", "error", err)
 
 			render.JSON(w, r, resp.Error(resperrors.ErrNoteDoesNotExist))
 
 			return
 		}
 		if err != nil {
-			log.Error("failed to update note title", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to update note title", "error", err)
 
 			render.JSON(w, r, resp.Error(resperrors.ErrFailedToUpdateNoteTitle))
 

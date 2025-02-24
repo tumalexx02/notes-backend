@@ -55,7 +55,7 @@ func New(cfg *config.Config, log *slog.Logger, imageUploader ImageUploader) http
 
 		noteFromDB, err := imageUploader.GetNodeById(id)
 		if errors.Is(err, storage.ErrNoteNodeNotFound) {
-			log.Error("note node not found", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("note node not found", "error", err)
 
 			w.WriteHeader(http.StatusNotFound)
 			render.JSON(w, r, resp.Error(resperrors.ErrNodeDoesNotExist))
@@ -63,7 +63,7 @@ func New(cfg *config.Config, log *slog.Logger, imageUploader ImageUploader) http
 			return
 		}
 		if err != nil {
-			log.Error("failed to get note id", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to get note id", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
@@ -82,7 +82,7 @@ func New(cfg *config.Config, log *slog.Logger, imageUploader ImageUploader) http
 
 		err = r.ParseMultipartForm(10 << 20)
 		if err != nil {
-			log.Error("failed to parse multipart form", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to parse multipart form", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
@@ -92,7 +92,7 @@ func New(cfg *config.Config, log *slog.Logger, imageUploader ImageUploader) http
 
 		imageFile, format, err := r.FormFile("image")
 		if err != nil {
-			log.Error("failed to get image", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to get image", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
@@ -186,6 +186,8 @@ func New(cfg *config.Config, log *slog.Logger, imageUploader ImageUploader) http
 		w.Header().Set("Content-Type", "image/"+imageType)
 
 		http.ServeContent(w, r, fileName, fileInfo.ModTime(), file)
+
+		render.JSON(w, r, resp.OK())
 	}
 }
 

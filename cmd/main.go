@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log/slog"
 	"main/internal/app"
 	"main/internal/config"
 	"main/internal/logger"
@@ -18,14 +17,14 @@ func main() {
 	// app init
 	myApp, err := app.New(cfg, log)
 	if err != nil {
-		log.Error("failed to create app", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+		log.Error("failed to create app", "error", err)
 		os.Exit(1)
 	}
 
 	// app start
 	err = myApp.Start()
 	if err != nil {
-		log.Error("failed to start app", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+		log.Error("failed to start app", "error", err)
 		os.Exit(1)
 	}
 }

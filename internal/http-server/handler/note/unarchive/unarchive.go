@@ -39,7 +39,7 @@ func New(log *slog.Logger, noteUnarchiver NoteUnarchiver) http.HandlerFunc {
 
 		err = noteUnarchiver.UnarchiveNote(id)
 		if errors.Is(err, storage.ErrNoteNotFound) {
-			log.Error("note not found", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("note not found", "error", err)
 
 			w.WriteHeader(http.StatusNotFound)
 			render.JSON(w, r, resp.Error(resperrors.ErrNoteDoesNotExist))
@@ -47,7 +47,7 @@ func New(log *slog.Logger, noteUnarchiver NoteUnarchiver) http.HandlerFunc {
 			return
 		}
 		if err != nil {
-			log.Error("failed to unarchive note", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to unarchive note", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrFailedToUnarchiveNote))

@@ -56,6 +56,10 @@ const (
 		SELECT * FROM note_nodes
 		WHERE id = $1;
 	`
+	getAllNotesNodesQuery = `
+		SELECT * FROM note_nodes
+		WHERE note_id = $1;
+	`
 )
 
 // notes' queries

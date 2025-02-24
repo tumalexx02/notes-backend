@@ -5,6 +5,7 @@ import (
 	"main/internal/config"
 	"main/internal/http-server/handler/node/add"
 	deleteNode "main/internal/http-server/handler/node/delete"
+	getimage "main/internal/http-server/handler/node/get-image"
 	updatecontent "main/internal/http-server/handler/node/update-content"
 	uploadimage "main/internal/http-server/handler/node/upload-image"
 	"main/internal/http-server/middleware/authenticator"
@@ -18,6 +19,7 @@ type NoteNoder interface {
 	deleteNode.NodeDeleter
 	updatecontent.NodeUpdater
 	uploadimage.ImageUploader
+	getimage.ImageGetter
 }
 
 func (r *Router) InitNoteNodesRoutes(storage Storage, logger *slog.Logger, cfg *config.Config) {
@@ -28,6 +30,9 @@ func (r *Router) InitNoteNodesRoutes(storage Storage, logger *slog.Logger, cfg *
 
 		// create
 		nodeRouter.Post("/", add.New(logger, storage))
+
+		// read
+		nodeRouter.Get("/{id}/image", getimage.New(logger, storage))
 
 		// update
 		nodeRouter.Patch("/{id}", updatecontent.New(logger, storage))

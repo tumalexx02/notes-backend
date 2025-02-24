@@ -27,6 +27,7 @@ var (
 	ErrInvalidImageFormat        = errors.New("invalid image format")
 	ErrInvalidNoteId             = errors.New("invalid note id")
 	ErrInvalidContentType        = errors.New("invalid content type")
+	ErrNodeIsNotImage            = errors.New("node is not image")
 
 	ErrNoteDoesNotExist         = errors.New("note does not exist")
 	ErrNoteIsAlreadyExists      = errors.New("note is already exists")
@@ -39,4 +40,5 @@ var (
 	ErrFailedToUpdateFullNote   = errors.New("failed to update full note")
 	ErrFailedToUpdateNodesOrder = errors.New("failed to update nodes order")
 	ErrFailedToUpdateNoteTitle  = errors.New("failed to update note title")
+	ErrFailedToGetNoteNodes     = errors.New("failed to get note nodes")
 )
