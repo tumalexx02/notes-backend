@@ -21,7 +21,7 @@ type Response struct {
 }
 
 type PublicNoteGetter interface {
-	GetPublicNote(id int) (note.Note, error)
+	GetPublicNote(publicId string) (note.Note, error)
 	GetAllNotesNodes(noteId int) ([]note.NoteNode, error)
 	validate.UserVerifier
 }
@@ -35,7 +35,7 @@ func New(log *slog.Logger, publicNoteGetter PublicNoteGetter) http.HandlerFunc {
 			slog.String("request-id", middleware.GetReqID(r.Context())),
 		)
 
-		id, err := validate.GetIntURLParam("id", w, r, log)
+		id, err := validate.GetUUIDURLParam("id", w, r, log)
 		if err != nil {
 			return
 		}

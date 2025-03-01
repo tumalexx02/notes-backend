@@ -75,7 +75,7 @@ const (
 	`
 	GetPublicNoteQuery = `
 		SELECT * FROM notes
-		WHERE id = $1 AND is_public = TRUE;
+		WHERE public_id = $1;
 	`
 	GetNotesByUserIdQuery = `
 		SELECT * FROM notes
@@ -111,12 +111,13 @@ const (
 		WHERE id = $2 AND user_id = $1;`
 	MakeNotePublicQuery = `
 		UPDATE notes
-		SET is_public = TRUE, updated_at = NOW()
-		WHERE id = $1;
+		SET public_id = COALESCE(public_id, gen_random_uuid()), updated_at = NOW()
+		WHERE id = $1
+		RETURNING public_id;
 	`
 	MakeNotePrivateQuery = `
 		UPDATE notes
-		SET is_public = FALSE, updated_at = NOW()
+		SET public_id = NULL, updated_at = NOW()
 		WHERE id = $1;
 	`
 )

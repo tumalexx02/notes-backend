@@ -1,13 +1,13 @@
 -- +goose Up
 -- +goose StatementBegin
 ALTER TABLE notes 
-ADD COLUMN is_public BOOLEAN NOT NULL DEFAULT FALSE;
-CREATE INDEX idx_notes_is_public ON notes (is_public);
+ADD COLUMN public_id UUID DEFAULT NULL;
+CREATE INDEX idx_notes_public_note ON notes (public_id);
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
-DROP INDEX IF EXISTS idx_notes_is_public;
+DROP INDEX IF EXISTS idx_notes_public_note;
 ALTER TABLE notes 
-DROP COLUMN IF EXISTS is_public;
+DROP COLUMN IF EXISTS public_id;
 -- +goose StatementEnd

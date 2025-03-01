@@ -13,8 +13,13 @@ import (
 	"github.com/go-chi/render"
 )
 
+type Response struct {
+	resp.Response
+	PublicId string `json:"public_id"`
+}
+
 type PublicNoteMaker interface {
-	MakeNotePublic(id int) error
+	MakeNotePublic(noteId int) (string, error)
 	validate.UserVerifier
 }
 
@@ -37,7 +42,7 @@ func New(log *slog.Logger, publicNoteMaker PublicNoteMaker) http.HandlerFunc {
 			return
 		}
 
-		err = publicNoteMaker.MakeNotePublic(id)
+		publicId, err := publicNoteMaker.MakeNotePublic(id)
 		if errors.Is(err, storage.ErrNoteNotFound) {
 			log.Error("note not found", "error", err)
 
@@ -55,6 +60,6 @@ func New(log *slog.Logger, publicNoteMaker PublicNoteMaker) http.HandlerFunc {
 			return
 		}
 
-		render.JSON(w, r, resp.OK())
+		render.JSON(w, r, Response{resp.OK(), publicId})
 	}
 }

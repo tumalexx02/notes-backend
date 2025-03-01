@@ -69,13 +69,13 @@ func (s *Storage) GetNoteById(id int) (note.Note, error) {
 	return noteFromDB, nil
 }
 
-func (s *Storage) GetPublicNote(id int) (note.Note, error) {
+func (s *Storage) GetPublicNote(publicId string) (note.Note, error) {
 	const op = "storage.postgres.GetPublicNote"
 
 	// getting note by id without nodes
 	var noteFromDB note.Note
 
-	err := s.db.Get(&noteFromDB, queries.GetPublicNoteQuery, id)
+	err := s.db.Get(&noteFromDB, queries.GetPublicNoteQuery, publicId)
 	if errors.Is(err, sql.ErrNoRows) {
 		return noteFromDB, storage.ErrNoteNotFound
 	}
@@ -252,25 +252,21 @@ func (s *Storage) UpdateNoteNodeOrder(noteId int, oldOrder int, newOrder int) er
 	return nil
 }
 
-func (s *Storage) MakeNotePublic(noteId int) error {
+func (s *Storage) MakeNotePublic(noteId int) (string, error) {
 	const op = "storage.postgres.MakeNotePublic"
 
+	var publicId string
+
 	// making note public
-	res, err := s.db.Exec(queries.MakeNotePublicQuery, noteId)
+	err := s.db.Get(&publicId, queries.MakeNotePublicQuery, noteId)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", storage.ErrNoteNotFound
+	}
 	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	// check if note wasn't found
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-	if rowsAffected == 0 {
-		return storage.ErrNoteNotFound
-	}
-
-	return nil
+	return publicId, nil
 }
 
 func (s *Storage) MakeNotePrivate(noteId int) error {
