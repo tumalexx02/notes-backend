@@ -105,6 +105,16 @@ const (
 	isUserNoteOwnerQuery = `
 		SELECT COUNT(*) FROM notes
 		WHERE id = $2 AND user_id = $1;`
+	makeNotePublicQuery = `
+		UPDATE notes
+		SET is_public = TRUE, updated_at = NOW()
+		WHERE id = $1;
+	`
+	makeNotePrivateQuery = `
+		UPDATE notes
+		SET is_public = FALSE, updated_at = NOW()
+		WHERE id = $1;
+	`
 )
 
 // users' queries

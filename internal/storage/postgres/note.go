@@ -234,6 +234,48 @@ func (s *Storage) UpdateNoteNodeOrder(noteId int, oldOrder int, newOrder int) er
 	return nil
 }
 
+func (s *Storage) MakeNotePublic(noteId int) error {
+	const op = "storage.postgres.MakeNotePublic"
+
+	// making note public
+	res, err := s.db.Exec(makeNotePublicQuery, noteId)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	// check if note wasn't found
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if rowsAffected == 0 {
+		return storage.ErrNoteNotFound
+	}
+
+	return nil
+}
+
+func (s *Storage) MakeNotePrivate(noteId int) error {
+	const op = "storage.postgres.MakeNotePrivate"
+
+	// making note private
+	res, err := s.db.Exec(makeNotePrivateQuery, noteId)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	// check if note wasn't found
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if rowsAffected == 0 {
+		return storage.ErrNoteNotFound
+	}
+
+	return nil
+}
+
 func (s *Storage) IsUserNoteOwner(userId string, noteId int) (bool, error) {
 	const op = "storage.postgres.IsUserNoteOwner"
 

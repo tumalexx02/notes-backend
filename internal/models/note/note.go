@@ -12,6 +12,7 @@ const (
 )
 
 type Note struct {
+	IsPublic   bool       `json:"is_public" db:"is_public"`
 	Id         int        `json:"id"`
 	UserId     string     `json:"user_id" db:"user_id"`
 	Title      string     `json:"title" validate:"max=31"`
