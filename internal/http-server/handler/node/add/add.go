@@ -5,6 +5,7 @@ import (
 	resp "main/internal/http-server/api/response"
 	resperrors "main/internal/http-server/api/response-errors"
 	"main/internal/http-server/api/validate"
+	"main/internal/models/note"
 	"net/http"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -51,9 +52,13 @@ func New(log *slog.Logger, noteAdder NodeAdder) http.HandlerFunc {
 		contentType := req.ContentType
 		content := req.Content
 
+		if contentType == note.ContentTypeImage {
+			content = ""
+		}
+
 		id, err := noteAdder.AddNoteNode(noteId, contentType, content)
 		if err != nil {
-			log.Error("failed to add note node", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to add note node", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrFailedToAddNoteNode))

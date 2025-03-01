@@ -65,20 +65,6 @@ func (s *Storage) GetNoteById(id int) (note.Note, error) {
 		return noteFromDB, fmt.Errorf("%s: %w", op, err)
 	}
 
-	// getting note nodes
-	var noteNodes []note.NoteNode
-
-	err = s.db.Select(&noteNodes, getNoteNodesQuery, noteFromDB.Id)
-	if errors.Is(err, sql.ErrNoRows) {
-		return noteFromDB, storage.ErrNoteNotFound
-	}
-	if err != nil {
-		return noteFromDB, fmt.Errorf("%s: %w", op, err)
-	}
-
-	// final note
-	noteFromDB.Nodes = noteNodes
-
 	return noteFromDB, nil
 }
 

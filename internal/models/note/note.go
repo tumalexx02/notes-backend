@@ -9,7 +9,6 @@ type ContentType string
 const (
 	ContentTypeText  = "text"
 	ContentTypeImage = "image"
-	ContentTypeList  = "list"
 )
 
 type Note struct {
@@ -27,7 +26,8 @@ type NoteNode struct {
 	NoteId      int         `json:"note_id" db:"note_id"`
 	Order       int         `json:"order" validate:"gte=0"`
 	ContentType ContentType `json:"content_type" db:"content_type"`
-	Content     string      `json:"content"`
+	Content     string      `json:"content,omitempty"`
+	Image       string      `json:"image,omitempty"`
 }
 
 type NotePreview struct {

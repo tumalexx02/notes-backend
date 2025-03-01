@@ -87,7 +87,7 @@ func VerifyUserNote(id int, userVerifier UserVerifier, w http.ResponseWriter, r 
 
 	isOwner, err := userVerifier.IsUserNoteOwner(userId, id)
 	if err != nil {
-		log.Error("failed to check note owner", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+		log.Error("failed to check note owner", "error", err)
 
 		w.WriteHeader(http.StatusInternalServerError)
 		render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
@@ -114,7 +114,7 @@ func VerifyUserNoteNode(id int, userVerifier UserVerifier, w http.ResponseWriter
 
 	isOwner, err := userVerifier.IsUserNoteNodeOwner(userId, id)
 	if err != nil {
-		log.Error("failed to check note node owner", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+		log.Error("failed to check note node owner", "error", err)
 
 		w.WriteHeader(http.StatusInternalServerError)
 		render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
@@ -137,7 +137,7 @@ func VerifyUserNoteNode(id int, userVerifier UserVerifier, w http.ResponseWriter
 func categoryValidator(fl validator.FieldLevel) bool {
 	category := fl.Field().String()
 	switch category {
-	case note.ContentTypeImage, note.ContentTypeText, note.ContentTypeList:
+	case note.ContentTypeImage, note.ContentTypeText:
 		return true
 	default:
 		return false

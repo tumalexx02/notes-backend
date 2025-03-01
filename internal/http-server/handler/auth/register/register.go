@@ -50,7 +50,7 @@ func New(cfg *config.Config, log *slog.Logger, register Register, tokenAuth *jwt
 
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 		if err != nil {
-			log.Error("failed to hash password", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to hash password", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
@@ -60,14 +60,14 @@ func New(cfg *config.Config, log *slog.Logger, register Register, tokenAuth *jwt
 
 		userID, err := register.CreateUser(req.Email, req.Name, string(hashedPassword))
 		if errors.Is(err, storage.ErrUserAlreadyExists) {
-			log.Error("user already exists", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("user already exists", "error", err)
 
 			render.JSON(w, r, resp.Error(resperrors.ErrUserIsAlreadyExists))
 
 			return
 		}
 		if err != nil {
-			log.Error("failed to create user", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to create user", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
@@ -77,7 +77,7 @@ func New(cfg *config.Config, log *slog.Logger, register Register, tokenAuth *jwt
 
 		tokens, err := auth.GenerateTokens(userID, register, cfg, tokenAuth)
 		if err != nil {
-			log.Error("failed to generate tokens", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to generate tokens", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))

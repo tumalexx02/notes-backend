@@ -18,3 +18,7 @@ authorization:
   access_ttl: 15m
   refresh_ttl: 300h
   salt: "docker-salt"
+image:
+  images_dir: "./uploads"
+  image_salt: "docker-image-salt"
+  max_width: 768

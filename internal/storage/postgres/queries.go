@@ -52,6 +52,14 @@ const (
     SELECT COUNT(*) FROM note_nodes
     WHERE id = $2 AND (note_id IN (SELECT id FROM notes WHERE user_id = $1));
 	`
+	getNoteIdByNoteNodeIdQuery = `
+		SELECT * FROM note_nodes
+		WHERE id = $1;
+	`
+	getAllNotesNodesQuery = `
+		SELECT * FROM note_nodes
+		WHERE note_id = $1;
+	`
 )
 
 // notes' queries

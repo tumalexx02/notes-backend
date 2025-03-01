@@ -45,7 +45,7 @@ func New(cfg *config.Config, log *slog.Logger, refreshTokener RefreshTokener, to
 
 		token, err := tokenAuth.Decode(req.RefreshToken)
 		if err != nil {
-			log.Error("failed to decode token", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to decode token", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
@@ -75,7 +75,7 @@ func New(cfg *config.Config, log *slog.Logger, refreshTokener RefreshTokener, to
 
 		refreshToken, err := refreshTokener.GetRefreshTokenById(tokenIdStr)
 		if err != nil {
-			log.Error("failed to get user id", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to get user id", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
@@ -108,7 +108,7 @@ func New(cfg *config.Config, log *slog.Logger, refreshTokener RefreshTokener, to
 			"exp":     accessExp,
 		})
 		if err != nil {
-			log.Error("failed to encode access token", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			log.Error("failed to encode access token", "error", err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
