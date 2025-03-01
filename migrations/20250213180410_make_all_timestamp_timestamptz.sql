@@ -1,0 +1,29 @@
+-- +goose Up
+-- +goose StatementBegin
+ALTER TABLE notes
+  ALTER COLUMN created_at SET DATA TYPE TIMESTAMPTZ,
+  ALTER COLUMN updated_at SET DATA TYPE TIMESTAMPTZ,
+  ALTER COLUMN archived_at SET DATA TYPE TIMESTAMPTZ;
+
+ALTER TABLE refresh_tokens
+  ALTER COLUMN expires_at SET DATA TYPE TIMESTAMPTZ;
+
+ALTER TABLE users
+  ALTER COLUMN created_at SET DATA TYPE TIMESTAMPTZ,
+  ALTER COLUMN updated_at SET DATA TYPE TIMESTAMPTZ;
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+ALTER TABLE notes
+  ALTER COLUMN created_at SET DATA TYPE TIMESTAMP,
+  ALTER COLUMN updated_at SET DATA TYPE TIMESTAMP,
+  ALTER COLUMN archived_at SET DATA TYPE TIMESTAMP;
+
+ALTER TABLE refresh_tokens
+  ALTER COLUMN expires_at SET DATA TYPE TIMESTAMP;
+
+ALTER TABLE users
+  ALTER COLUMN created_at SET DATA TYPE TIMESTAMP,
+  ALTER COLUMN updated_at SET DATA TYPE TIMESTAMP;
+-- +goose StatementEnd

@@ -1,0 +1,24 @@
+env: local
+migrations_path: ./app/migrations
+is_reload: false
+postgres:
+  host: db
+  port: 5432
+  user: postgres
+  password: postgres
+  name: postgres
+  database: notes
+  ssl_mode: disable
+http_server:
+  address: 0.0.0.0:8181
+  timeout: 5s
+  idle_timeout: 10s
+authorization:
+  secret: "docker-secret"
+  access_ttl: 15m
+  refresh_ttl: 300h
+  salt: "docker-salt"
+image:
+  images_dir: "./uploads"
+  image_salt: "docker-image-salt"
+  max_width: 768
