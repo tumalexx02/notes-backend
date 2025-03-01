@@ -3,7 +3,6 @@ package makeprivate
 import (
 	"errors"
 	"log/slog"
-	"main/internal/config"
 	"main/internal/http-server/api/validate"
 	"main/internal/storage"
 	"net/http"
@@ -20,7 +19,7 @@ type PrivateNoteMaker interface {
 	validate.UserVerifier
 }
 
-func New(cfg *config.Config, log *slog.Logger, privateNoteMaker PrivateNoteMaker) http.HandlerFunc {
+func New(log *slog.Logger, privateNoteMaker PrivateNoteMaker) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.note.makeprivate.New"
 

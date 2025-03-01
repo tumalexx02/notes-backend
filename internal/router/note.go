@@ -3,12 +3,13 @@ package router
 import (
 	"log/slog"
 	"main/internal/config"
-	makeprivate "main/internal/http-server/handler/make-private"
 	"main/internal/http-server/handler/note/archive"
 	"main/internal/http-server/handler/note/create"
 	deleteNote "main/internal/http-server/handler/note/delete"
 	getnote "main/internal/http-server/handler/note/get-note"
+	getpublicnote "main/internal/http-server/handler/note/get-public-note"
 	getusernotes "main/internal/http-server/handler/note/get-user-notes"
+	makeprivate "main/internal/http-server/handler/note/make-private"
 	makepublic "main/internal/http-server/handler/note/make-public"
 	"main/internal/http-server/handler/note/unarchive"
 	updatefullnote "main/internal/http-server/handler/note/update-full-note"
@@ -32,9 +33,12 @@ type Noter interface {
 	updateorder.NoteOrderUpdater
 	makepublic.PublicNoteMaker
 	makeprivate.PrivateNoteMaker
+	getpublicnote.PublicNoteGetter
 }
 
 func (r *Router) InitNotesRoutes(storage Storage, logger *slog.Logger, cfg *config.Config) {
+	r.Get("/public/{id}", getpublicnote.New(logger, storage))
+
 	// note routes
 	r.Route("/note", func(noteRouter chi.Router) {
 		noteRouter.Use(jwtauth.Verifier(r.jwtauth))
@@ -51,8 +55,8 @@ func (r *Router) InitNotesRoutes(storage Storage, logger *slog.Logger, cfg *conf
 		noteRouter.Put("/{id}", updatefullnote.New(logger, storage))
 		noteRouter.Patch("/{id}", updatetitle.New(logger, storage))
 		noteRouter.Patch("/{id}/order", updateorder.New(logger, storage))
-		noteRouter.Patch("/{id}/public", makepublic.New(cfg, logger, storage))
-		noteRouter.Patch("/{id}/private", makeprivate.New(cfg, logger, storage))
+		noteRouter.Patch("/{id}/public", makepublic.New(logger, storage))
+		noteRouter.Patch("/{id}/private", makeprivate.New(logger, storage))
 
 		// delete (and archive)
 		noteRouter.Patch("/{id}/archive", archive.New(logger, storage))

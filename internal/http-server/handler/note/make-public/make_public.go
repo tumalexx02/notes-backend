@@ -3,7 +3,6 @@ package makepublic
 import (
 	"errors"
 	"log/slog"
-	"main/internal/config"
 	resp "main/internal/http-server/api/response"
 	resperrors "main/internal/http-server/api/response-errors"
 	"main/internal/http-server/api/validate"
@@ -19,7 +18,7 @@ type PublicNoteMaker interface {
 	validate.UserVerifier
 }
 
-func New(cfg *config.Config, log *slog.Logger, publicNoteMaker PublicNoteMaker) http.HandlerFunc {
+func New(log *slog.Logger, publicNoteMaker PublicNoteMaker) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.note.makepublic.New"
 

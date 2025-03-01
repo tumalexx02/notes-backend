@@ -1,23 +1,23 @@
-package postgres
+package queries
 
 // note nodes' queries
 const (
-	createBlankNoteNodeQuery = `
+	CreateBlankNoteNodeQuery = `
 		INSERT INTO note_nodes (note_id, "order", content_type, content) 
 		VALUES ($1, (SELECT COUNT(*) FROM note_nodes WHERE note_id = $1), $2, $3)
 		RETURNING id;
 	`
-	deleteNoteNodeQuery = `
+	DeleteNoteNodeQuery = `
 		DELETE FROM note_nodes
 		WHERE id = $1
 		RETURNING note_id, "order";
 	`
-	updateOrderAfterDeleteQuery = `
+	UpdateOrderAfterDeleteQuery = `
 		UPDATE note_nodes
 		SET "order" = "order" - 1
 		WHERE note_id = $1 AND "order" > $2;
 	`
-	updateOrderQuery = `
+	UpdateOrderQuery = `
 		UPDATE note_nodes
 		SET "order" = CASE
 				WHEN "order" > $2 AND "order" <= $3 THEN "order" - 1
@@ -27,36 +27,36 @@ const (
 		END
 		WHERE note_id = $1;
 	`
-	updateNoteNodeContentQuery = `
+	UpdateNoteNodeContentQuery = `
 		UPDATE note_nodes
 		SET content = $2
 		WHERE id = $1
 		RETURNING note_id;
 	`
-	nodesCountQuery = `
+	NodesCountQuery = `
 		SELECT COUNT(*) 
 		FROM note_nodes 
 		WHERE note_id = $1;
 	`
-	getNoteNodeByOrderQuery = `
+	GetNoteNodeByOrderQuery = `
 		SELECT COUNT(*) 
 		FROM note_nodes 
 		WHERE note_id = $1 AND "order" = $2;
 	`
-	getNoteNodesQuery = `
+	GetNoteNodesQuery = `
 		SELECT * FROM note_nodes
 		WHERE note_id = $1
 		ORDER BY "order";
 	`
-	isUserNodeOwnerQuery = `
+	IsUserNodeOwnerQuery = `
     SELECT COUNT(*) FROM note_nodes
     WHERE id = $2 AND (note_id IN (SELECT id FROM notes WHERE user_id = $1));
 	`
-	getNoteIdByNoteNodeIdQuery = `
+	GetNoteIdByNoteNodeIdQuery = `
 		SELECT * FROM note_nodes
 		WHERE id = $1;
 	`
-	getAllNotesNodesQuery = `
+	GetAllNotesNodesQuery = `
 		SELECT * FROM note_nodes
 		WHERE note_id = $1;
 	`
@@ -64,53 +64,57 @@ const (
 
 // notes' queries
 const (
-	createNoteQuery = `
+	CreateNoteQuery = `
 		INSERT INTO notes (title, user_id) 
 		VALUES ($1, $2)
 		RETURNING id;
 	`
-	getNoteQuery = `
+	GetNoteQuery = `
 		SELECT * FROM notes
 		WHERE id = $1;
 	`
-	getNotesByUserIdQuery = `
+	GetPublicNoteQuery = `
+		SELECT * FROM notes
+		WHERE id = $1 AND is_public = TRUE;
+	`
+	GetNotesByUserIdQuery = `
 		SELECT * FROM notes
 		WHERE user_id = $1
 		ORDER BY updated_at DESC;
 	`
-	updateNoteTitleQuery = `
+	UpdateNoteTitleQuery = `
 		UPDATE notes
 		SET title = $2, updated_at = NOW()
 		WHERE id = $1;
 	`
-	archiveNoteQuery = `
+	ArchiveNoteQuery = `
 		UPDATE notes
 		SET archived_at = NOW()
 		WHERE id = $1;
 	`
-	unarchiveNoteQuery = `
+	UnarchiveNoteQuery = `
 		UPDATE notes
 		SET archived_at = NULL
 		WHERE id = $1;
 	`
-	deleteNoteQuery = `
+	DeleteNoteQuery = `
 		DELETE FROM notes
 		WHERE id = $1;
 	`
-	setUpdatedAtQuery = `
+	SetUpdatedAtQuery = `
 		UPDATE notes
 		SET updated_at = NOW()
 		WHERE id = $1;
 	`
-	isUserNoteOwnerQuery = `
+	IsUserNoteOwnerQuery = `
 		SELECT COUNT(*) FROM notes
 		WHERE id = $2 AND user_id = $1;`
-	makeNotePublicQuery = `
+	MakeNotePublicQuery = `
 		UPDATE notes
 		SET is_public = TRUE, updated_at = NOW()
 		WHERE id = $1;
 	`
-	makeNotePrivateQuery = `
+	MakeNotePrivateQuery = `
 		UPDATE notes
 		SET is_public = FALSE, updated_at = NOW()
 		WHERE id = $1;
@@ -119,16 +123,16 @@ const (
 
 // users' queries
 const (
-	createUserQuery = `
+	CreateUserQuery = `
 		INSERT INTO users (email, name, password_hash) 
 		VALUES ($1, $2, $3)
 		RETURNING id;
 	`
-	getUserByEmailQuery = `
+	GetUserByEmailQuery = `
 		SELECT * FROM users
 		WHERE email = $1;
 	`
-	getUserByIdQuery = `
+	GetUserByIdQuery = `
 		SELECT * FROM users
 		WHERE id = $1;
 	`
@@ -136,20 +140,20 @@ const (
 
 // auth tokens' queries
 const (
-	createRefreshTokenQuery = `
+	CreateRefreshTokenQuery = `
 		INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at) 
 		VALUES ($1, $2, $3, $4)
 		RETURNING id;
 	`
-	getRefreshTokenByIdQuery = `
+	GetRefreshTokenByIdQuery = `
 		SELECT * FROM refresh_tokens
 		WHERE id = $1;
 	`
-	deleteExpiredRefreshTokensQuery = `
+	DeleteExpiredRefreshTokensQuery = `
 		DELETE FROM refresh_tokens
 		WHERE expires_at < NOW();
 	`
-	deleteRefreshTokenQuery = `
+	DeleteRefreshTokenQuery = `
 		DELETE FROM refresh_tokens
 		WHERE id = $1;
 	`

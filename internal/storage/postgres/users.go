@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"main/internal/models/user"
 	"main/internal/storage"
+	"main/internal/storage/postgres/queries"
 
 	"github.com/lib/pq"
 )
@@ -20,7 +21,7 @@ func (s *Storage) CreateUser(email, name, passwordHash string) (string, error) {
 	// creating user
 	var id string
 
-	err := s.db.Get(&id, createUserQuery, email, name, passwordHash)
+	err := s.db.Get(&id, queries.CreateUserQuery, email, name, passwordHash)
 	if err != nil {
 		// check if user already exists
 		var sqlxerr *pq.Error
@@ -40,7 +41,7 @@ func (s *Storage) GetUser(email string) (user.User, error) {
 	// getting user by email
 	var userFromDB user.User
 
-	err := s.db.Get(&userFromDB, getUserByEmailQuery, email)
+	err := s.db.Get(&userFromDB, queries.GetUserByEmailQuery, email)
 	if errors.Is(err, sql.ErrNoRows) {
 		return user.User{}, storage.ErrUserNotFound
 	}
@@ -57,7 +58,7 @@ func (s *Storage) GetUserById(id string) (user.User, error) {
 	// getting user by id
 	var userFromDB user.User
 
-	err := s.db.Get(&userFromDB, getUserByIdQuery, id)
+	err := s.db.Get(&userFromDB, queries.GetUserByIdQuery, id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return user.User{}, storage.ErrUserNotFound
 	}

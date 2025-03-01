@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"main/internal/models/note"
 	"main/internal/storage"
+	"main/internal/storage/postgres/queries"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -16,7 +17,7 @@ func (s *Storage) CreateNote(noteTitle string, userId string) (int, error) {
 	// creating note
 	var id int
 
-	err := s.db.Get(&id, createNoteQuery, noteTitle, userId)
+	err := s.db.Get(&id, queries.CreateNoteQuery, noteTitle, userId)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
@@ -36,7 +37,7 @@ func (s *Storage) GetUserNotes(userId string) ([]note.NotePreview, error) {
 	var notes []note.NotePreview
 
 	// getting notes by user_id
-	err := s.db.Select(&notes, getNotesByUserIdQuery, userId)
+	err := s.db.Select(&notes, queries.GetNotesByUserIdQuery, userId)
 	if errors.Is(err, sql.ErrNoRows) {
 		return []note.NotePreview{}, nil
 	}
@@ -57,7 +58,24 @@ func (s *Storage) GetNoteById(id int) (note.Note, error) {
 	// getting note by id without nodes
 	var noteFromDB note.Note
 
-	err := s.db.Get(&noteFromDB, getNoteQuery, id)
+	err := s.db.Get(&noteFromDB, queries.GetNoteQuery, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return noteFromDB, storage.ErrNoteNotFound
+	}
+	if err != nil {
+		return noteFromDB, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return noteFromDB, nil
+}
+
+func (s *Storage) GetPublicNote(id int) (note.Note, error) {
+	const op = "storage.postgres.GetPublicNote"
+
+	// getting note by id without nodes
+	var noteFromDB note.Note
+
+	err := s.db.Get(&noteFromDB, queries.GetPublicNoteQuery, id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return noteFromDB, storage.ErrNoteNotFound
 	}
@@ -72,7 +90,7 @@ func (s *Storage) UpdateNoteTitle(id int, title string) error {
 	const op = "storage.postgres.UpdateNoteTitle"
 
 	// updating note title
-	res, err := s.db.Exec(updateNoteTitleQuery, id, title)
+	res, err := s.db.Exec(queries.UpdateNoteTitleQuery, id, title)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -98,7 +116,7 @@ func (s *Storage) UpdateFullNote(id int, note note.Note) (int, error) {
 	tx := s.db.MustBegin()
 
 	// updating note title
-	res, err := tx.Exec(updateNoteTitleQuery, id, note.Title)
+	res, err := tx.Exec(queries.UpdateNoteTitleQuery, id, note.Title)
 	if err != nil {
 		_ = tx.Rollback()
 		return 0, fmt.Errorf("%s: %w", op, err)
@@ -133,7 +151,7 @@ func (s *Storage) ArchiveNote(id int) error {
 	const op = "storage.postgres.ArchiveNote"
 
 	// archiving note
-	res, err := s.db.Exec(archiveNoteQuery, id)
+	res, err := s.db.Exec(queries.ArchiveNoteQuery, id)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -154,7 +172,7 @@ func (s *Storage) UnarchiveNote(id int) error {
 	const op = "storage.postgres.ArchiveNote"
 
 	// unarchiving note
-	res, err := s.db.Exec(unarchiveNoteQuery, id)
+	res, err := s.db.Exec(queries.UnarchiveNoteQuery, id)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -175,7 +193,7 @@ func (s *Storage) DeleteNote(id int) error {
 	const op = "storage.postgres.DeleteNote"
 
 	// deleting note
-	res, err := s.db.Exec(deleteNoteQuery, id)
+	res, err := s.db.Exec(queries.DeleteNoteQuery, id)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -213,14 +231,14 @@ func (s *Storage) UpdateNoteNodeOrder(noteId int, oldOrder int, newOrder int) er
 	}
 
 	// update all note nodes' order between old_order and new_order
-	_, err = tx.Exec(updateOrderQuery, noteId, oldOrder, newOrder)
+	_, err = tx.Exec(queries.UpdateOrderQuery, noteId, oldOrder, newOrder)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	// set updated_at field on note
-	_, err = tx.Exec(setUpdatedAtQuery, noteId)
+	_, err = tx.Exec(queries.SetUpdatedAtQuery, noteId)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("%s: %w", op, err)
@@ -238,7 +256,7 @@ func (s *Storage) MakeNotePublic(noteId int) error {
 	const op = "storage.postgres.MakeNotePublic"
 
 	// making note public
-	res, err := s.db.Exec(makeNotePublicQuery, noteId)
+	res, err := s.db.Exec(queries.MakeNotePublicQuery, noteId)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -259,7 +277,7 @@ func (s *Storage) MakeNotePrivate(noteId int) error {
 	const op = "storage.postgres.MakeNotePrivate"
 
 	// making note private
-	res, err := s.db.Exec(makeNotePrivateQuery, noteId)
+	res, err := s.db.Exec(queries.MakeNotePrivateQuery, noteId)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -281,7 +299,7 @@ func (s *Storage) IsUserNoteOwner(userId string, noteId int) (bool, error) {
 
 	var exists int
 
-	err := s.db.Get(&exists, isUserNoteOwnerQuery, userId, noteId)
+	err := s.db.Get(&exists, queries.IsUserNoteOwnerQuery, userId, noteId)
 	if err != nil {
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
@@ -293,7 +311,7 @@ func updateAllNestedNodes(tx *sqlx.Tx, op string, nodes []note.NoteNode) (int64,
 	var rowsAffected int64
 
 	for _, noteNode := range nodes {
-		res, err := tx.Exec(updateNoteNodeContentQuery, noteNode.Id, noteNode.Content)
+		res, err := tx.Exec(queries.UpdateNoteNodeContentQuery, noteNode.Id, noteNode.Content)
 		if err != nil {
 			_ = tx.Rollback()
 			return 0, fmt.Errorf("%s: %w", op, err)
@@ -314,7 +332,7 @@ func updateAllNestedNodes(tx *sqlx.Tx, op string, nodes []note.NoteNode) (int64,
 func checkBounds(tx *sqlx.Tx, op string, noteId int, newOrder int) error {
 	var count int
 
-	err := tx.Get(&count, nodesCountQuery, noteId)
+	err := tx.Get(&count, queries.NodesCountQuery, noteId)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -331,7 +349,7 @@ func checkBounds(tx *sqlx.Tx, op string, noteId int, newOrder int) error {
 func isNoteNodeExists(tx *sqlx.Tx, op string, noteId int, oldOrder int) error {
 	var exists int
 
-	err := tx.Get(&exists, getNoteNodeByOrderQuery, noteId, oldOrder)
+	err := tx.Get(&exists, queries.GetNoteNodeByOrderQuery, noteId, oldOrder)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

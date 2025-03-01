@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"main/internal/models/note"
 	"main/internal/storage"
+	"main/internal/storage/postgres/queries"
 )
 
 func (s *Storage) AddNoteNode(noteId int, contentType string, content string) (int, error) {
@@ -17,14 +18,14 @@ func (s *Storage) AddNoteNode(noteId int, contentType string, content string) (i
 	// creating note node
 	var id int
 
-	err := tx.Get(&id, createBlankNoteNodeQuery, noteId, contentType, content)
+	err := tx.Get(&id, queries.CreateBlankNoteNodeQuery, noteId, contentType, content)
 	if err != nil {
 		_ = tx.Rollback()
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
 	// set updated_at field on note
-	_, err = tx.Exec(setUpdatedAtQuery, noteId)
+	_, err = tx.Exec(queries.SetUpdatedAtQuery, noteId)
 	if err != nil {
 		_ = tx.Rollback()
 		return 0, fmt.Errorf("%s: %w", op, err)
@@ -47,7 +48,7 @@ func (s *Storage) DeleteNoteNode(id int) error {
 	// deleting node with returning (note_id, order)
 	var tempNoteNode note.NoteNode
 
-	err := tx.Get(&tempNoteNode, deleteNoteNodeQuery, id)
+	err := tx.Get(&tempNoteNode, queries.DeleteNoteNodeQuery, id)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("%s: %w", op, err)
@@ -57,14 +58,14 @@ func (s *Storage) DeleteNoteNode(id int) error {
 	var noteId, order = tempNoteNode.NoteId, tempNoteNode.Order
 
 	// update all note nodes' order after deleted node
-	_, err = tx.Exec(updateOrderAfterDeleteQuery, noteId, order)
+	_, err = tx.Exec(queries.UpdateOrderAfterDeleteQuery, noteId, order)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	// set updated_at field on note
-	_, err = tx.Exec(setUpdatedAtQuery, noteId)
+	_, err = tx.Exec(queries.SetUpdatedAtQuery, noteId)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("%s: %w", op, err)
@@ -87,7 +88,7 @@ func (s *Storage) UpdateNoteNodeContent(id int, content string) error {
 	// updating note node with returning note_id
 	var noteId int
 
-	err := tx.Get(&noteId, updateNoteNodeContentQuery, id, content)
+	err := tx.Get(&noteId, queries.UpdateNoteNodeContentQuery, id, content)
 	if errors.Is(err, sql.ErrNoRows) {
 		_ = tx.Rollback()
 		return storage.ErrNoteNodeNotFound
@@ -98,7 +99,7 @@ func (s *Storage) UpdateNoteNodeContent(id int, content string) error {
 	}
 
 	// set updated_at field on note
-	_, err = tx.Exec(setUpdatedAtQuery, noteId)
+	_, err = tx.Exec(queries.SetUpdatedAtQuery, noteId)
 	if err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("%s: %w", op, err)
@@ -117,7 +118,7 @@ func (s *Storage) IsUserNoteNodeOwner(userId string, noteNodeId int) (bool, erro
 
 	var exists int
 
-	err := s.db.Get(&exists, isUserNodeOwnerQuery, userId, noteNodeId)
+	err := s.db.Get(&exists, queries.IsUserNodeOwnerQuery, userId, noteNodeId)
 	if err != nil {
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
@@ -131,7 +132,7 @@ func (s *Storage) GetNodeById(id int) (note.NoteNode, error) {
 	// getting note id by note node id
 	var node note.NoteNode
 
-	err := s.db.Get(&node, getNoteIdByNoteNodeIdQuery, id)
+	err := s.db.Get(&node, queries.GetNoteIdByNoteNodeIdQuery, id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return node, storage.ErrNoteNodeNotFound
 	}
@@ -147,7 +148,7 @@ func (s *Storage) GetAllNotesNodes(noteId int) ([]note.NoteNode, error) {
 
 	var nodes []note.NoteNode
 
-	err := s.db.Select(&nodes, getAllNotesNodesQuery, noteId)
+	err := s.db.Select(&nodes, queries.GetAllNotesNodesQuery, noteId)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nodes, storage.ErrNoteNotFound
 	}
