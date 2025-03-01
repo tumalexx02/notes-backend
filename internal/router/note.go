@@ -3,11 +3,13 @@ package router
 import (
 	"log/slog"
 	"main/internal/config"
+	makeprivate "main/internal/http-server/handler/make-private"
 	"main/internal/http-server/handler/note/archive"
 	"main/internal/http-server/handler/note/create"
 	deleteNote "main/internal/http-server/handler/note/delete"
 	getnote "main/internal/http-server/handler/note/get-note"
 	getusernotes "main/internal/http-server/handler/note/get-user-notes"
+	makepublic "main/internal/http-server/handler/note/make-public"
 	"main/internal/http-server/handler/note/unarchive"
 	updatefullnote "main/internal/http-server/handler/note/update-full-note"
 	updateorder "main/internal/http-server/handler/note/update-order"
@@ -28,6 +30,8 @@ type Noter interface {
 	unarchive.NoteUnarchiver
 	deleteNote.NoteDeleter
 	updateorder.NoteOrderUpdater
+	makepublic.PublicNoteMaker
+	makeprivate.PrivateNoteMaker
 }
 
 func (r *Router) InitNotesRoutes(storage Storage, logger *slog.Logger, cfg *config.Config) {
@@ -47,6 +51,8 @@ func (r *Router) InitNotesRoutes(storage Storage, logger *slog.Logger, cfg *conf
 		noteRouter.Put("/{id}", updatefullnote.New(logger, storage))
 		noteRouter.Patch("/{id}", updatetitle.New(logger, storage))
 		noteRouter.Patch("/{id}/order", updateorder.New(logger, storage))
+		noteRouter.Patch("/{id}/public", makepublic.New(cfg, logger, storage))
+		noteRouter.Patch("/{id}/private", makeprivate.New(cfg, logger, storage))
 
 		// delete (and archive)
 		noteRouter.Patch("/{id}/archive", archive.New(logger, storage))

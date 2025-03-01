@@ -30,6 +30,8 @@ var (
 	ErrInvalidContentType           = errors.New("invalid content type")
 	ErrNodeIsNotImage               = errors.New("node is not image")
 	ErrNoteNodeContentTypeIsNotText = errors.New("node is not text")
+	ErrFailedToMakeNotePublic       = errors.New("failed to make note public")
+	ErrFailedToMakeNotePrivate      = errors.New("failed to make note private")
 
 	ErrNoteDoesNotExist         = errors.New("note does not exist")
 	ErrNoteIsAlreadyExists      = errors.New("note is already exists")
