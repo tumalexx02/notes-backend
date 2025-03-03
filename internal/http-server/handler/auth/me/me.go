@@ -1,9 +1,12 @@
 package me
 
 import (
+	"errors"
 	"log/slog"
 	resp "main/internal/http-server/api/response"
 	resperrors "main/internal/http-server/api/response-errors"
+	"main/internal/models/user"
+	"main/internal/storage"
 	"net/http"
 
 	"github.com/go-chi/jwtauth/v5"
@@ -12,10 +15,14 @@ import (
 
 type Response struct {
 	resp.Response
-	UserId string `json:"user_id"`
+	User user.User `json:"user"`
 }
 
-func New(log *slog.Logger, tokenAuth *jwtauth.JWTAuth) http.HandlerFunc {
+type UserGetter interface {
+	GetUserById(id string) (user.User, error)
+}
+
+func New(log *slog.Logger, userGetter UserGetter, tokenAuth *jwtauth.JWTAuth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		_, claims, _ := jwtauth.FromContext(r.Context())
 
@@ -26,6 +33,24 @@ func New(log *slog.Logger, tokenAuth *jwtauth.JWTAuth) http.HandlerFunc {
 			render.JSON(w, r, resp.Error(resperrors.ErrUserUnauthorized))
 		}
 
-		render.JSON(w, r, Response{resp.OK(), userId})
+		userFromDB, err := userGetter.GetUserById(userId)
+		if errors.Is(err, storage.ErrUserNotFound) {
+			log.Error("user not found", slog.Attr{Key: "user_id", Value: slog.StringValue(userId)})
+
+			w.WriteHeader(http.StatusNotFound)
+			render.JSON(w, r, resp.Error(resperrors.ErrUserDoesNotExist))
+
+			return
+		}
+		if err != nil {
+			log.Error("failed to get user", "error", err)
+
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error(resperrors.ErrInternalServerError))
+
+			return
+		}
+
+		render.JSON(w, r, Response{resp.OK(), userFromDB})
 	}
 }

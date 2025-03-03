@@ -17,6 +17,7 @@ type Authorizer interface {
 	register.Register
 	login.Loginer
 	refresh.RefreshTokener
+	me.UserGetter
 }
 
 func (r *Router) InitAuthRoutes(storage Storage, logger *slog.Logger, cfg *config.Config) {
@@ -29,7 +30,7 @@ func (r *Router) InitAuthRoutes(storage Storage, logger *slog.Logger, cfg *confi
 			protected.Use(jwtauth.Verifier(r.jwtauth))
 			protected.Use(authenticator.Authenticator(r.jwtauth, logger))
 
-			protected.Get("/me", me.New(logger, r.jwtauth))
+			protected.Get("/me", me.New(logger, storage, r.jwtauth))
 		})
 	})
 }
