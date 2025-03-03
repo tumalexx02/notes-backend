@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"main/internal/auth"
 	"main/internal/storage"
+	"main/internal/storage/postgres/queries"
 	"time"
 )
 
 func (s *Storage) CreateRefreshToken(id, userId, tokenHash string, expiresAt time.Time) error {
 	const op = "storage.postgres.CreateRefreshToken"
 
-	_, err := s.db.Exec(createRefreshTokenQuery, id, userId, tokenHash, expiresAt)
+	_, err := s.db.Exec(queries.CreateRefreshTokenQuery, id, userId, tokenHash, expiresAt)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -25,7 +26,7 @@ func (s *Storage) GetRefreshTokenById(id string) (auth.RefreshToken, error) {
 
 	var refreshToken auth.RefreshToken
 
-	err := s.db.Get(&refreshToken, getRefreshTokenByIdQuery, id)
+	err := s.db.Get(&refreshToken, queries.GetRefreshTokenByIdQuery, id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return auth.RefreshToken{}, storage.ErrRefreshTokenNotFound
 	}
@@ -40,7 +41,7 @@ func (s *Storage) DeleteExpiredRefreshTokens() (int, error) {
 	const op = "storage.postgres.DeleteExpiredRefreshTokens"
 
 	// deleting expired refresh tokens
-	rows, err := s.db.Exec(deleteExpiredRefreshTokensQuery)
+	rows, err := s.db.Exec(queries.DeleteExpiredRefreshTokensQuery)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}

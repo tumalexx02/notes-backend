@@ -13,6 +13,7 @@ const (
 
 type Note struct {
 	Id         int        `json:"id"`
+	PublicId   string     `json:"public_id" db:"public_id"`
 	UserId     string     `json:"user_id" db:"user_id"`
 	Title      string     `json:"title" validate:"max=31"`
 	Nodes      []NoteNode `json:"nodes"`

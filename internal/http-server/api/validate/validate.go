@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 )
 
 type UserVerifier interface {
@@ -78,6 +79,22 @@ func GetIntURLParam(paramName string, w http.ResponseWriter, r *http.Request, lo
 	}
 
 	return intParam, nil
+}
+
+func GetUUIDURLParam(paramName string, w http.ResponseWriter, r *http.Request, log *slog.Logger) (string, error) {
+	strParam := chi.URLParam(r, paramName)
+
+	if _, err := uuid.Parse(strParam); err != nil {
+		paramError := fmt.Errorf("invalid '%s' param", paramName)
+		log.Error(paramError.Error(), "error", err)
+
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, resp.Error(paramError))
+
+		return "", err
+	}
+
+	return strParam, nil
 }
 
 func VerifyUserNote(id int, userVerifier UserVerifier, w http.ResponseWriter, r *http.Request, log *slog.Logger) error {
