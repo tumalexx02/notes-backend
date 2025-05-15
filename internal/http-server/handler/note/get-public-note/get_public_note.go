@@ -73,12 +73,6 @@ func New(log *slog.Logger, publicNoteGetter PublicNoteGetter) http.HandlerFunc {
 			return
 		}
 
-		for i, n := range nodes {
-			if n.ContentType == note.ContentTypeImage {
-				nodes[i].Content = ""
-			}
-		}
-
 		noteFromDB.Nodes = nodes
 
 		render.JSON(w, r, Response{resp.OK(), noteFromDB})

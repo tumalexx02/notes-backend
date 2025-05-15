@@ -13,13 +13,13 @@ const (
 
 type Note struct {
 	Id         int        `json:"id"`
-	PublicId   string     `json:"public_id" db:"public_id"`
 	UserId     string     `json:"user_id" db:"user_id"`
 	Title      string     `json:"title" validate:"max=31"`
 	Nodes      []NoteNode `json:"nodes"`
 	CreatedAt  time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt  time.Time  `json:"updated_at" db:"updated_at"`
 	ArchivedAt *time.Time `json:"archived_at,omitempty" db:"archived_at"`
+	PublicId   *string    `json:"public_id,omitempty" db:"public_id"`
 }
 
 type NoteNode struct {
@@ -38,4 +38,5 @@ type NotePreview struct {
 	CreatedAt  time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt  time.Time  `json:"updated_at" db:"updated_at"`
 	ArchivedAt *time.Time `json:"archived_at,omitempty" db:"archived_at"`
+	PublicId   *string    `json:"public_id,omitempty" db:"public_id"`
 }

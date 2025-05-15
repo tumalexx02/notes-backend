@@ -77,12 +77,6 @@ func New(log *slog.Logger, noteGetter NoteGetter) http.HandlerFunc {
 			return
 		}
 
-		for i, n := range nodes {
-			if n.ContentType == note.ContentTypeImage {
-				nodes[i].Content = ""
-			}
-		}
-
 		noteFromDB.Nodes = nodes
 
 		log.Info("note got", slog.Int("id", noteFromDB.Id))
